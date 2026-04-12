@@ -20,7 +20,7 @@ import BaseListPage from "./BaseListPage";
 import * as Setting from "./Setting";
 import * as StoreBackend from "./backend/StoreBackend";
 import i18next from "i18next";
-import {ThemeDefault} from "./Conf";
+import {ShowGithubCorner, ThemeDefault} from "./Conf";
 import * as StorageProviderBackend from "./backend/StorageProviderBackend";
 import * as ProviderBackend from "./backend/ProviderBackend";
 import {CopyOutlined, DeleteOutlined} from "@ant-design/icons";
@@ -161,6 +161,7 @@ class StoreListPage extends BaseListPage {
       suggestionCount: 3,
       isDefault: false,
       state: "Active",
+      enableExtraOptions: ShowGithubCorner,
     };
   }
 

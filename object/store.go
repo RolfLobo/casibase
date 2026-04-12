@@ -99,6 +99,7 @@ type Store struct {
 	ShowAutoRead        bool              `json:"showAutoRead"`
 	DisableFileUpload   bool              `json:"disableFileUpload"`
 	HideThinking        bool              `json:"hideThinking"`
+	EnableExtraOptions  bool              `json:"enableExtraOptions"`
 	IsDefault           bool              `json:"isDefault"`
 	State               string            `xorm:"varchar(100)" json:"state"`
 

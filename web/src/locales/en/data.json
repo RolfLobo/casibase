@@ -795,6 +795,8 @@
     "Disable file upload": "Disable file upload",
     "Disable file upload - Tooltip": "Disable user file uploads (admin-only updates)",
     "Edit Store": "Edit Store",
+    "Enable extra options": "Enable extra options",
+    "Enable extra options - Tooltip": "When enabled, show advanced store settings such as storage, embedding, agents, and integrations",
     "Embedding provider": "Embedding provider",
     "Embedding provider - Tooltip": "Text embedding service provider",
     "Enable TTS streaming": "Enable TTS streaming",

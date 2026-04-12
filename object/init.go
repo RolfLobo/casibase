@@ -77,6 +77,7 @@ func initBuiltInStore(modelProviderName string, embeddingProviderName string, tt
 		ChildModelProviders:  []string{},
 		IsDefault:            true,
 		State:                "Active",
+		EnableExtraOptions:   conf.GetConfigBool("showGithubCorner"),
 		PropertiesMap:        map[string]*Properties{},
 	}
 

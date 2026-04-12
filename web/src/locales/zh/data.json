@@ -795,6 +795,8 @@
     "Disable file upload": "禁止文件上传",
     "Disable file upload - Tooltip": "禁止用户上传文件（启用后知识库仅管理员可更新）",
     "Edit Store": "编辑数据仓库",
+    "Enable extra options": "启用扩展选项",
+    "Enable extra options - Tooltip": "开启后显示高级配置，如存储、向量、Agent、语音与集成等相关字段",
     "Embedding provider": "嵌入提供商",
     "Embedding provider - Tooltip": "文本嵌入服务提供商",
     "Enable TTS streaming": "开启TTS流式传输",
