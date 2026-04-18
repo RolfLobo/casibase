@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -275,6 +276,65 @@ func (p *GeminiModelProvider) calculatePrice(modelResult *ModelResult, lang stri
 	return nil
 }
 
+func isGeminiImagenModel(subType string) bool {
+	return strings.Contains(strings.ToLower(subType), "imagen-")
+}
+
+// queryImagen uses the Imagen image API (GenerateImages). These models do not support CountTokens or GenerateContent.
+func (p *GeminiModelProvider) queryImagen(ctx context.Context, client *genai.Client, question string, writer io.Writer, lang string) (*ModelResult, error) {
+	flusher, ok := writer.(http.Flusher)
+	if !ok {
+		return nil, fmt.Errorf(i18n.Translate(lang, "model:writer does not implement http.Flusher"))
+	}
+
+	cfg := &genai.GenerateImagesConfig{
+		NumberOfImages: 1,
+		OutputMIMEType: "image/png",
+	}
+	imgResp, err := client.Models.GenerateImages(ctx, p.subType, question, cfg)
+	if err != nil {
+		return nil, err
+	}
+	if imgResp == nil || len(imgResp.GeneratedImages) == 0 {
+		return nil, fmt.Errorf("empty image generation response")
+	}
+	gen := imgResp.GeneratedImages[0]
+	if gen == nil || gen.Image == nil || len(gen.Image.ImageBytes) == 0 {
+		reason := ""
+		if gen != nil {
+			reason = gen.RAIFilteredReason
+		}
+		if reason != "" {
+			return nil, fmt.Errorf("%s", reason)
+		}
+		return nil, fmt.Errorf("no image bytes in generation response")
+	}
+
+	img := gen.Image
+	mime := img.MIMEType
+	if mime == "" {
+		mime = "image/png"
+	}
+	b64 := base64.StdEncoding.EncodeToString(img.ImageBytes)
+	dataURL := fmt.Sprintf("data:%s;base64,%s", mime, b64)
+	html := fmt.Sprintf("<img src=\"%s\" width=\"100%%\" height=\"auto\">", dataURL)
+	if _, err := fmt.Fprint(writer, html); err != nil {
+		return nil, err
+	}
+	flusher.Flush()
+
+	modelResult := &ModelResult{
+		ImageCount:         1,
+		TotalTokenCount:    1,
+		PromptTokenCount:   0,
+		ResponseTokenCount: 0,
+	}
+	if err := p.calculatePrice(modelResult, lang); err != nil {
+		return nil, err
+	}
+	return modelResult, nil
+}
+
 func (p *GeminiModelProvider) QueryText(question string, writer io.Writer, history []*RawMessage, prompt string, knowledgeMessages []*RawMessage, agentInfo *AgentInfo, lang string) (*ModelResult, error) {
 	ctx := context.Background()
 	// Access your API key as an environment variable (see "Set up your API key" above)
@@ -298,6 +358,10 @@ func (p *GeminiModelProvider) QueryText(question string, writer io.Writer, histo
 		} else {
 			return nil, fmt.Errorf(i18n.Translate(lang, "model:exceed max tokens"))
 		}
+	}
+
+	if isGeminiImagenModel(p.subType) {
+		return p.queryImagen(ctx, client, question, writer, lang)
 	}
 
 	model := client.Models
