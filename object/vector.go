@@ -190,6 +190,15 @@ func GetVectorCount(owner string, storeName string, field string, value string) 
 	return session.Count(&Vector{Store: storeName})
 }
 
+func GetVectorCountByStoreNames(storeNames []string, field, value string) (int64, error) {
+	if len(storeNames) == 0 {
+		return 0, nil
+	}
+	session := GetDbSession("", -1, -1, field, value, "", "")
+	session = session.In("store", storeNames)
+	return session.Count(&Vector{})
+}
+
 func GetPaginationVectors(owner string, storeName string, offset, limit int, field, value, sortField, sortOrder string) ([]*Vector, error) {
 	vectors := []*Vector{}
 	session := GetDbSession(owner, offset, limit, field, value, sortField, sortOrder)
@@ -203,5 +212,19 @@ func GetPaginationVectors(owner string, storeName string, offset, limit int, fie
 		return vectors, err
 	}
 
+	return vectors, nil
+}
+
+func GetPaginationVectorsByStoreNames(storeNames []string, offset, limit int, field, value, sortField, sortOrder string) ([]*Vector, error) {
+	if len(storeNames) == 0 {
+		return []*Vector{}, nil
+	}
+	vectors := []*Vector{}
+	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
+	session = session.In("store", storeNames)
+	err := session.Find(&vectors)
+	if err != nil {
+		return vectors, err
+	}
 	return vectors, nil
 }

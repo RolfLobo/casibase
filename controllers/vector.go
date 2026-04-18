@@ -45,7 +45,6 @@ func (c *ApiController) GetGlobalVectors() {
 // @Success 200 {array} object.Vector The Response object
 // @router /get-vectors [get]
 func (c *ApiController) GetVectors() {
-	owner := "admin"
 	storeName := c.Input().Get("store")
 	limit := c.Input().Get("pageSize")
 	page := c.Input().Get("p")
@@ -62,7 +61,7 @@ func (c *ApiController) GetVectors() {
 	}
 
 	if limit == "" || page == "" {
-		vectors, err := object.GetVectors(owner)
+		vectors, err := object.GetVectors("admin")
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
@@ -70,21 +69,53 @@ func (c *ApiController) GetVectors() {
 
 		c.ResponseOk(vectors)
 	} else {
-		limit := util.ParseInt(limit)
-		count, err := object.GetVectorCount(owner, storeName, field, value)
+		limitInt := util.ParseInt(limit)
+		username := c.GetSessionUsername()
+
+		var count int64
+		var vectors []*object.Vector
+		var err error
+
+		if c.IsGlobalAdmin() {
+			count, err = object.GetVectorCount("admin", storeName, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			vectors, err = object.GetPaginationVectors("admin", storeName, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		} else if c.IsStoreAdmin() {
+			storeNames, err2 := getStoreNamesForUser(username)
+			if err2 != nil {
+				c.ResponseError(err2.Error())
+				return
+			}
+			if storeName != "" {
+				storeNames = []string{storeName}
+			}
+			count, err = object.GetVectorCountByStoreNames(storeNames, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			vectors, err = object.GetPaginationVectorsByStoreNames(storeNames, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		} else {
+			// Regular user: only vectors from the current store
+			count, err = object.GetVectorCount("admin", storeName, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			vectors, err = object.GetPaginationVectors("admin", storeName, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		}
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
 
-		paginator := pagination.SetPaginator(c.Ctx, limit, count)
-		vectors, err := object.GetPaginationVectors(owner, storeName, paginator.Offset(), limit, field, value, sortField, sortOrder)
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
-		}
-
-		c.ResponseOk(vectors, paginator.Nums())
+		c.ResponseOk(vectors, count)
 	}
 }
 
