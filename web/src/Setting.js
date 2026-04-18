@@ -1276,14 +1276,16 @@ export function isProviderSupportWebSearch(provider) {
   }
 
   if (provider.type === "Alibaba Cloud") {
-    // Not all Alibaba Cloud models support web search
-    const unsupportedModels = [""];
+    // Wanxiang image generation models do not support web search
+    if (provider.subType && provider.subType.startsWith("wanx")) {
+      return false;
+    }
 
     if (!provider.subType) {
       return true; // Default to true for Alibaba Cloud if subType is not specified
     }
 
-    return !unsupportedModels.includes(provider.subType);
+    return true;
   }
 
   return false;
@@ -1839,6 +1841,10 @@ export function getModelSubTypeOptions(type) {
       {id: "deepseek-r1-distill-qwen-32b", name: "deepseek-r1-distill-qwen-32b"},
       {id: "deepseek-r1-distill-llama-8b", name: "deepseek-r1-distill-llama-8b"},
       {id: "deepseek-r1-distill-llama-70b", name: "deepseek-r1-distill-llama-70b"},
+      // Wanxiang image generation models
+      {id: "wanx2.1-t2i-turbo", name: "wanx2.1-t2i-turbo"},
+      {id: "wanx2.1-t2i-plus", name: "wanx2.1-t2i-plus"},
+      {id: "wanx-v1", name: "wanx-v1"},
     ];
   } else if (type === "Baichuan") {
     return [

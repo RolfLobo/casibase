@@ -16,6 +16,7 @@ package model
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -23,6 +24,8 @@ import (
 	"strings"
 
 	"github.com/casibase/casibase/i18n"
+	dashscopesdk "github.com/casibase/dashscope-go-sdk"
+	"github.com/casibase/dashscope-go-sdk/wanx"
 	"github.com/casibase/dashscopego"
 	"github.com/casibase/dashscopego/qwen"
 )
@@ -41,6 +44,10 @@ func NewAlibabacloudModelProvider(subType string, apiKey string, temperature flo
 		temperature: temperature,
 		topP:        topP,
 	}, nil
+}
+
+func isWanxModel(subType string) bool {
+	return strings.HasPrefix(subType, "wanx")
 }
 
 func (p *AlibabacloudModelProvider) GetPricing() string {
@@ -66,11 +73,35 @@ https://help.aliyun.com/zh/model-studio/billing-for-model-studio
 | DeepSeek-R1-Distill | deepseek-r1-distill-qwen-32b    | 0.002yuan/1,000 tokens           | 0.006yuan/1,000 tokens         |
 | DeepSeek-R1-Distill | deepseek-r1-distill-llama-8b    | 0.000yuan/1,000 tokens           | 0.000yuan/1,000 tokens         |
 | DeepSeek-R1-Distill | deepseek-r1-distill-llama-70b   | 0.000yuan/1,000 tokens           | 0.000yuan/1,000 tokens         |
+
+Image Generation Models:
+| Model                 | sub-type                  | Price per image |
+|-----------------------|---------------------------|-----------------|
+| Wanx2.1 T2I Turbo     | wanx2.1-t2i-turbo         | 0.04yuan/image  |
+| Wanx2.1 T2I Plus      | wanx2.1-t2i-plus          | 0.12yuan/image  |
+| Wanx V1               | wanx-v1                   | 0.04yuan/image  |
 `
 }
 
 func (p *AlibabacloudModelProvider) calculatePrice(modelResult *ModelResult, lang string) error {
 	price := 0.0
+
+	if isWanxModel(p.subType) {
+		imagePriceTable := map[string]float64{
+			"wanx2.1-t2i-turbo": 0.04,
+			"wanx2.1-t2i-plus":  0.12,
+			"wanx-v1":           0.04,
+		}
+		unitPrice, ok := imagePriceTable[p.subType]
+		if !ok {
+			unitPrice = 0.04
+		}
+		price = float64(modelResult.ImageCount) * unitPrice
+		modelResult.TotalPrice = price
+		modelResult.Currency = "CNY"
+		return nil
+	}
+
 	priceTable := map[string][2]float64{
 		"qwen-long":                     {0.0005, 0.002},
 		"qwen-turbo":                    {0.002, 0.006},
@@ -103,11 +134,71 @@ func (p *AlibabacloudModelProvider) calculatePrice(modelResult *ModelResult, lan
 	return nil
 }
 
+func (p *AlibabacloudModelProvider) queryWanx(ctx context.Context, question string, writer io.Writer, lang string) (*ModelResult, error) {
+	flusher, ok := writer.(http.Flusher)
+	if !ok {
+		return nil, fmt.Errorf(i18n.Translate(lang, "model:writer does not implement http.Flusher"))
+	}
+
+	cli := dashscopesdk.NewTongyiClient(p.subType, p.apiKey)
+	req := &wanx.ImageSynthesisRequest{
+		Model: p.subType,
+		Input: wanx.ImageSynthesisInput{
+			Prompt: question,
+		},
+		Params: wanx.ImageSynthesisParams{
+			N:    1,
+			Size: "1024*1024",
+		},
+		// Do not ask the SDK to download the image bytes: GetImage uses the same
+		// HTTP options as DashScope API calls, including Content-Type: application/json,
+		// which breaks OSS presigned URL signature verification (SignatureDoesNotMatch).
+		// The task result URL is returned and embedded; the browser loads it with a plain GET.
+		Download: false,
+	}
+
+	imgBlobs, err := cli.CreateImageGeneration(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if len(imgBlobs) == 0 {
+		return nil, fmt.Errorf("empty image generation response")
+	}
+
+	blob := imgBlobs[0]
+	var imgSrc string
+	if len(blob.Data) > 0 {
+		b64 := base64.StdEncoding.EncodeToString(blob.Data)
+		imgSrc = fmt.Sprintf("data:%s;base64,%s", blob.ImgType, b64)
+	} else {
+		imgSrc = blob.ImgURL
+	}
+
+	html := fmt.Sprintf("<img src=\"%s\" width=\"100%%\" height=\"auto\">", imgSrc)
+	if _, err = fmt.Fprint(writer, html); err != nil {
+		return nil, err
+	}
+	flusher.Flush()
+
+	modelResult := &ModelResult{
+		ImageCount:      1,
+		TotalTokenCount: 1,
+	}
+	if err = p.calculatePrice(modelResult, lang); err != nil {
+		return nil, err
+	}
+	return modelResult, nil
+}
+
 func (p *AlibabacloudModelProvider) QueryText(question string, writer io.Writer, history []*RawMessage, prompt string, knowledgeMessages []*RawMessage, agentInfo *AgentInfo, lang string) (*ModelResult, error) {
 	ctx := context.Background()
 	flusher, ok := writer.(http.Flusher)
 	if !ok {
 		return nil, fmt.Errorf(i18n.Translate(lang, "model:writer does not implement http.Flusher"))
+	}
+
+	if isWanxModel(p.subType) {
+		return p.queryWanx(ctx, question, writer, lang)
 	}
 
 	cli := dashscopego.NewTongyiClient(p.subType, p.apiKey)
