@@ -330,6 +330,8 @@ func (c *ApiController) GetMessageAnswer() {
 		message.IsAlerted = false
 	}
 
+	tryStoreRemoteImage(message, c.Ctx.Request.Host, c.GetAcceptLanguage())
+
 	message.Suggestions = textSuggestions
 
 	message.VectorScores = vectorScores
@@ -513,6 +515,9 @@ func (c *ApiController) GetAnswer() {
 		c.ResponseError(err.Error())
 		return
 	}
+
+	tryStoreRemoteImage(answerMessage, c.Ctx.Request.Host, c.GetAcceptLanguage())
+	answer = answerMessage.Text
 
 	chat.TokenCount += answerMessage.TokenCount
 	chat.Price += answerMessage.Price

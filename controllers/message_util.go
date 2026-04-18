@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/casibase/casibase/i18n"
 	"github.com/casibase/casibase/object"
@@ -115,6 +116,16 @@ func RefineMessageImage(message *object.Message, lang string) error {
 	message.Text = fmt.Sprintf("<img src=\"%s\" width=\"100%%\" height=\"auto\">", res)
 	message.FileName = message.Name + "." + ext
 	return nil
+}
+
+func tryStoreRemoteImage(message *object.Message, host string, lang string) {
+	if !strings.Contains(message.Text, "<img src=\"http") {
+		return
+	}
+	origin := getOriginFromHost(host)
+	if err := storeImage(message, origin, lang); err != nil {
+		fmt.Printf("storeImage() error: %s\n", err.Error())
+	}
 }
 
 func storeImage(message *object.Message, origin string, lang string) error {
