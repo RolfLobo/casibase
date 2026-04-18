@@ -135,7 +135,7 @@ func (c *ApiController) GetStore() {
 	if id == "admin/_casibase_default_store_" {
 		store, err = object.GetDefaultStore("admin")
 	} else {
-		store, err = object.GetStore(id)
+		store, err = object.GetStoreForGetApi(id)
 	}
 	if err != nil {
 		c.ResponseError(err.Error())

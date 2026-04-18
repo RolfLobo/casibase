@@ -178,6 +178,35 @@ func GetStore(id string) (*Store, error) {
 	return getStore(owner, name)
 }
 
+// GetStoreForGetApi resolves owner/name like GetStore. If there is no row for that exact pair
+// and the owner segment is "admin", returns the newest store with the same name under any owner.
+// This fixes links that incorrectly use admin as the owner while the store belongs to another user.
+func GetStoreForGetApi(id string) (*Store, error) {
+	store, err := GetStore(id)
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		return store, nil
+	}
+	owner, name, err := util.GetOwnerAndNameFromIdWithError(id)
+	if err != nil || name == "" {
+		return nil, nil
+	}
+	if owner != "admin" {
+		return nil, nil
+	}
+	var s Store
+	has, err := adapter.engine.Where("name = ?", name).Desc("created_time").Get(&s)
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, nil
+	}
+	return &s, nil
+}
+
 func UpdateStore(id string, store *Store) (bool, error) {
 	owner, name, err := util.GetOwnerAndNameFromIdWithError(id)
 	if err != nil {

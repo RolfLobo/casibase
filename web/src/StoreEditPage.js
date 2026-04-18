@@ -81,9 +81,14 @@ class StoreEditPage extends React.Component {
             res.data.error = res.data2;
           }
 
+          const store = res.data;
           this.setState({
-            store: res.data,
+            store: store,
+            ...(store ? {owner: store.owner, storeName: store.name} : {}),
           });
+          if (store && store.owner && store.owner !== this.props.match.params.owner) {
+            this.props.history.replace(`/stores/${store.owner}/${store.name}`);
+          }
         } else {
           Setting.showMessage("error", `${i18next.t("general:Failed to get")}: ${res.msg}`);
         }
