@@ -15,46 +15,14 @@
 import React from "react";
 import ReactEcharts from "echarts-for-react";
 import i18next from "i18next";
-
-const PIE_COLORS = ["#f5222d", "#fa8c16", "#faad14", "#52c41a", "#1677ff"];
-const NUM_BANDS = 5;
-
-function collectScores(categories) {
-  const scores = [];
-  (categories || []).forEach((cat) => {
-    (cat.items || []).forEach((item) => {
-      const s = Number(item.score) || 0;
-      scores.push(s);
-    });
-  });
-  return scores;
-}
-
-function buildBandsFromScores(scores) {
-  if (scores.length === 0) {
-    return [];
-  }
-  const dataMin = Math.min(...scores);
-  const dataMax = Math.max(...scores);
-  const low = Math.max(0, dataMin <= 10 ? 0 : Math.floor(dataMin / 10) * 10);
-  let high = Math.min(100, dataMax >= 90 ? 100 : Math.ceil((dataMax + 5) / 10) * 10);
-  if (high <= low) {
-    high = Math.min(100, low + 20);
-  }
-  const step = (high - low) / NUM_BANDS;
-  const bands = [];
-  for (let i = 0; i < NUM_BANDS; i++) {
-    const bMin = Math.round(low + i * step);
-    const bMax = i === NUM_BANDS - 1 ? high : Math.round(low + (i + 1) * step);
-    if (bMax > bMin) {
-      bands.push({min: bMin, max: bMax, label: `${bMin}-${bMax}`});
-    }
-  }
-  return bands;
-}
+import {
+  TASK_SCORE_BAND_COLORS,
+  buildBandsFromScores,
+  collectScoresFromCategories
+} from "./taskAnalysisScoreBands";
 
 function countByScoreBand(categories) {
-  const scores = collectScores(categories);
+  const scores = collectScoresFromCategories(categories);
   const bands = buildBandsFromScores(scores);
   if (bands.length === 0) {
     return [];
@@ -81,7 +49,7 @@ export default function TaskAnalysisPieChart({categories, chartRef}) {
   const data = bandData.map((d, i) => ({
     name: `${d.band}${scoreUnit} (${d.count}${i18next.t("task:Item count unit")})`,
     value: d.count,
-    itemStyle: {color: PIE_COLORS[i % PIE_COLORS.length]},
+    itemStyle: {color: TASK_SCORE_BAND_COLORS[i % TASK_SCORE_BAND_COLORS.length]},
   }));
   const option = {
     tooltip: {

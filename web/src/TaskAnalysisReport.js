@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import React, {useRef, useState} from "react";
-import {Button, Table} from "antd";
+import {Button, Table, Tag} from "antd";
 import {DownloadOutlined} from "@ant-design/icons";
 import i18next from "i18next";
 import TaskAnalysisRadarChart from "./TaskAnalysisRadarChart";
@@ -21,6 +21,7 @@ import TaskAnalysisBarChart from "./TaskAnalysisBarChart";
 import TaskAnalysisPieChart from "./TaskAnalysisPieChart";
 import {downloadTaskAnalysisReportDocx} from "./taskReportDocx";
 import {formatCategoryHeading} from "./taskResultFormat";
+import {getScoreBandColor} from "./taskAnalysisScoreBands";
 import * as Setting from "./Setting";
 
 const taskChartCardStyle = {
@@ -56,6 +57,8 @@ export default function TaskAnalysisReport({result, downloadFileName}) {
   if (!result) {
     return null;
   }
+  const categories = result.categories || [];
+
   const metaItems = [
     {label: i18next.t("task:Unit Name"), value: result.title},
     {label: i18next.t("task:Designer"), value: result.designer},
@@ -71,13 +74,28 @@ export default function TaskAnalysisReport({result, downloadFileName}) {
 
   const reportColumns = [
     {title: i18next.t("task:Sub-criteria"), dataIndex: "name", key: "name", width: "12%"},
-    {title: i18next.t("task:Score"), dataIndex: "score", key: "score", width: "8%", render: (score) => `${score}${i18next.t("task:Score Unit")}`},
+    {
+      title: i18next.t("task:Score"),
+      dataIndex: "score",
+      key: "score",
+      width: "8%",
+      render: (score) => {
+        const text = `${score}${i18next.t("task:Score Unit")}`;
+        const hex = getScoreBandColor(score, categories);
+        if (!hex) {
+          return text;
+        }
+        return (
+          <Tag color={hex} style={{margin: 0}}>
+            {text}
+          </Tag>
+        );
+      },
+    },
     {title: i18next.t("task:Advantages"), dataIndex: "advantage", key: "advantage", width: "27%"},
     {title: i18next.t("task:Disadvantages"), dataIndex: "disadvantage", key: "disadvantage", width: "27%"},
     {title: i18next.t("task:Suggestion"), dataIndex: "suggestion", key: "suggestion", width: "26%"},
   ];
-
-  const categories = result.categories || [];
   const radarAxis = (() => {
     if (categories.length === 0) {
       return {min: 0, max: 5};
