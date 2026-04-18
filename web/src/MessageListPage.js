@@ -33,6 +33,9 @@ class MessageListPage extends BaseListPage {
       ...this.state,
       providers: [],
       providerMap: {},
+      sortField: "",
+      sortOrder: "",
+      downloadLoading: false,
     };
   }
 
@@ -120,33 +123,90 @@ class MessageListPage extends BaseListPage {
       });
   }
 
+  fetchAllMessagesForExport = async() => {
+    const total = this.state.pagination.total;
+    if (!total) {
+      return [];
+    }
+    const field = this.state.searchedColumn ?? "";
+    const value = this.state.searchText ?? "";
+    const {sortField, sortOrder} = this.state;
+    const store = this.getApiStoreName();
+    const chunkSize = 10000;
+    const pageSize = Math.min(chunkSize, total);
+    const all = [];
+    let page = 1;
+    while (all.length < total) {
+      const res = await MessageBackend.getGlobalMessages(page, pageSize, field, value, sortField, sortOrder, store);
+      if (res.status !== "ok") {
+        Setting.showMessage("error", res.msg);
+        return null;
+      }
+      const batch = res.data || [];
+      all.push(...batch);
+      if (batch.length === 0 || batch.length < pageSize) {
+        break;
+      }
+      page += 1;
+    }
+    return all;
+  };
+
+  buildMessageExportRows(messages) {
+    const data = [];
+    messages.forEach(item => {
+      const row = {};
+      row[i18next.t("message:Author")] = item.author;
+      row[i18next.t("general:Chat")] = item.chat;
+      row[i18next.t("general:Message")] = item.name;
+      row[i18next.t("general:Created time")] = Setting.getFormattedDate(item.createdTime);
+      row[i18next.t("general:User")] = item.user;
+      row[i18next.t("general:Text")] = item.text;
+      row[i18next.t("message:Error text")] = item.errorText;
+      data.push(row);
+    });
+    return data;
+  }
+
+  downloadMessages = async() => {
+    const total = this.state.pagination.total;
+    if (!total) {
+      Setting.showMessage("info", i18next.t("general:No data"));
+      return;
+    }
+    this.setState({downloadLoading: true});
+    try {
+      const messages = await this.fetchAllMessagesForExport();
+      if (messages === null) {
+        return;
+      }
+      const sorted = [...messages].sort((a, b) => {
+        const byTime = (a.createdTime || "").localeCompare(b.createdTime || "");
+        if (byTime !== 0) {
+          return byTime;
+        }
+        return (a.name || "").localeCompare(b.name || "");
+      });
+      const data = this.buildMessageExportRows(sorted);
+      const sheet = Setting.json2sheet(data);
+      sheet["!cols"] = [
+        {wch: 12},
+        {wch: 15},
+        {wch: 15},
+        {wch: 30},
+        {wch: 15},
+        {wch: 50},
+        {wch: 50},
+      ];
+      Setting.saveSheetToFile(sheet, i18next.t("general:Messages"), `${i18next.t("general:Messages")}-${Setting.getFormattedDate(moment().format())}.xlsx`);
+    } finally {
+      this.setState({downloadLoading: false});
+    }
+  };
+
   renderDownloadXlsxButton() {
     return (
-      <Button size="small" style={{marginRight: "10px"}} onClick={() => {
-        const data = [];
-        this.state.data.filter(item => item.author !== "AI").forEach((item, i) => {
-          const row = {};
-          row[i18next.t("general:Chat")] = item.chat;
-          row[i18next.t("general:Message")] = item.name;
-          row[i18next.t("general:Created time")] = Setting.getFormattedDate(item.createdTime);
-          row[i18next.t("general:User")] = item.user;
-          row[i18next.t("general:Text")] = item.text;
-          row[i18next.t("message:Error text")] = item.errorText;
-          data.push(row);
-        });
-
-        const sheet = Setting.json2sheet(data);
-        sheet["!cols"] = [
-          {wch: 15},
-          {wch: 15},
-          {wch: 30},
-          {wch: 15},
-          {wch: 50},
-          {wch: 50},
-        ];
-
-        Setting.saveSheetToFile(sheet, i18next.t("general:Messages"), `${i18next.t("general:Messages")}-${Setting.getFormattedDate(moment().format())}.xlsx`);
-      }}>{i18next.t("general:Download")}</Button>
+      <Button size="small" style={{marginRight: "10px"}} loading={this.state.downloadLoading} onClick={this.downloadMessages}>{i18next.t("general:Download")}</Button>
     );
   }
 
@@ -562,7 +622,7 @@ class MessageListPage extends BaseListPage {
 
   fetch = (params = {}) => {
     let field = params.searchedColumn, value = params.searchText;
-    const sortField = params.sortField, sortOrder = params.sortOrder;
+    const sortField = params.sortField ?? "", sortOrder = params.sortOrder ?? "";
     if (params.type !== undefined && params.type !== null) {
       field = "type";
       value = params.type;
@@ -582,6 +642,8 @@ class MessageListPage extends BaseListPage {
             },
             searchText: params.searchText,
             searchedColumn: params.searchedColumn,
+            sortField,
+            sortOrder,
           });
         } else {
           if (Setting.isResponseDenied(res)) {
