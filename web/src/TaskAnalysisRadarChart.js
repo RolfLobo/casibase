@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import ReactEcharts from "echarts-for-react";
 import i18next from "i18next";
 
@@ -70,17 +70,102 @@ function escapeEchartsBraces(s) {
   return (s || "").replace(/[{}]/g, (c) => (c === "{" ? "［" : "］"));
 }
 
-export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarMax, chartRef}) {
-  if (!categories || categories.length === 0) {
-    return null;
+/** Series vertex symbols in RadarView carry `__dimIdx` (dimension index). */
+function dimIdxFromZrTarget(target) {
+  let t = target;
+  while (t) {
+    if (typeof t.__dimIdx === "number" && t.__dimIdx >= 0) {
+      return t.__dimIdx;
+    }
+    t = t.parent;
   }
-  const hasItems = (categories || []).some((c) => (c.items || []).length > 0);
-  const flat = buildFlatRows(categories, hasItems);
+  return -1;
+}
+
+function pickDimByPixel(chart, x, y) {
+  if (!chart || !chart.getModel) {
+    return {dim: -1, rOut: 0, maxR: 0, cx: 0, cy: 0};
+  }
+  const m = chart.getModel().getComponent("radar", 0);
+  if (!m) {
+    return {dim: -1, rOut: 0, maxR: 0, cx: 0, cy: 0};
+  }
+  // ECharts: RadarModel.coordinateSystem is the `Radar` impl with `pointToData`.
+  const sys = m.coordinateSystem;
+  if (!sys || typeof sys.pointToData !== "function") {
+    return {dim: -1, rOut: 0, maxR: 0, cx: 0, cy: 0};
+  }
+  const pr = sys.pointToData([x, y]);
+  if (!pr || typeof pr[0] !== "number" || pr[0] < 0) {
+    return {dim: -1, rOut: 0, maxR: 0, cx: 0, cy: 0};
+  }
+  const rOut = Math.hypot(x - sys.cx, y - sys.cy);
+  return {dim: pr[0], rOut, maxR: sys.r, cx: sys.cx, cy: sys.cy};
+}
+
+export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarMax, chartRef}) {
+  const [ec, setEc] = useState(null);
+  const [hoverTip, setHoverTip] = useState(null);
+  const flatRef = useRef([]);
+
+  const {flat, groupNames, showGroupLegend} = useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return {flat: [], groupNames: [], showGroupLegend: false};
+    }
+    const hasItems = (categories || []).some((c) => (c.items || []).length > 0);
+    const f = buildFlatRows(categories, hasItems);
+    const g = (categories || []).map((c, gIdx) => (c?.name ?? "").trim() || `—${gIdx + 1}—`);
+    return {flat: f, groupNames: g, showGroupLegend: g.length > 0};
+  }, [categories]);
+
+  flatRef.current = flat;
+
+  useEffect(() => {
+    if (!ec || flat.length === 0) {
+      return undefined;
+    }
+    const zr = ec.getZr();
+    const onMove = (e) => {
+      const ex = e.offsetX;
+      const ey = e.offsetY;
+      let dimIdx = dimIdxFromZrTarget(e.target);
+      if (dimIdx < 0) {
+        const pick = pickDimByPixel(ec, ex, ey);
+        dimIdx = pick.dim;
+        if (dimIdx < 0) {
+          setHoverTip(null);
+          return;
+        }
+        if (pick.maxR > 0 && pick.rOut < pick.maxR * 0.1) {
+          setHoverTip(null);
+          return;
+        }
+      }
+      const row = flatRef.current[dimIdx];
+      if (!row) {
+        setHoverTip(null);
+        return;
+      }
+      setHoverTip({
+        x: ex,
+        y: ey,
+        name: row.name,
+        score: row.score,
+        group: row.groupName,
+      });
+    };
+    const clear = () => setHoverTip(null);
+    zr.on("mousemove", onMove);
+    zr.on("globalout", clear);
+    return () => {
+      zr.off("mousemove", onMove);
+      zr.off("globalout", clear);
+    };
+  }, [ec, flat.length]);
+
   if (flat.length === 0) {
     return null;
   }
-
-  const groupNames = (categories || []).map((c, gIdx) => (c?.name ?? "").trim() || `—${gIdx + 1}—`);
 
   const rich = {};
   (categories || []).forEach((_, gIdx) => {
@@ -91,15 +176,14 @@ export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarM
     };
   });
 
-  const showGroupLegend = groupNames.length > 0;
-
   const option = {
-    /** Hovering the filled area otherwise opens a long tooltip; disabled per product request. */
+    /** ECharts default tooltip (full list) is off; a small custom overlay shows one sub-criterion. */
     tooltip: {show: false},
     radar: {
+      triggerEvent: true,
       indicator: flat.map((r) => ({name: r.axisKey, min: radarMin, max: radarMax})),
       center: ["50%", "50%"],
-      /** ~80%: radar web fills the chart area; nameGap kept small so long axis labels have room. */
+      /** Radar web size in the box; nameGap is small to leave room for long axis names. */
       radius: "80%",
       splitNumber: 4,
       axisName: {
@@ -134,7 +218,7 @@ export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarM
         lineStyle: {color: "rgba(22, 119, 255, 0.85)"},
         areaStyle: {opacity: 0.3, color: "rgba(22, 119, 255, 0.35)"},
         symbol: "circle",
-        symbolSize: 3,
+        symbolSize: 4,
       }],
     }],
   };
@@ -149,13 +233,56 @@ export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarM
         flexDirection: "column",
       }}
     >
-      <div style={{flex: 1, minHeight: 0, position: "relative"}}>
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          position: "relative",
+        }}
+      >
         <ReactEcharts
           ref={chartRef}
           option={option}
           style={{width: "100%", height: "100%"}}
           notMerge
+          onChartReady={setEc}
         />
+        {hoverTip ? (
+          <div
+            style={{
+              position: "absolute",
+              left: (hoverTip.x || 0) + 8,
+              top: (hoverTip.y || 0) + 8,
+              zIndex: 5,
+              maxWidth: 280,
+              padding: "8px 10px",
+              background: "rgba(0,0,0,0.82)",
+              color: "#fff",
+              fontSize: 12,
+              lineHeight: 1.45,
+              borderRadius: 4,
+              pointerEvents: "none",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            }}
+            role="tooltip"
+          >
+            <div
+              style={{
+                fontSize: 11,
+                color: "rgba(255,255,255,0.75)",
+                marginBottom: 2,
+                wordBreak: "break-word",
+              }}
+            >
+              {hoverTip.group}
+            </div>
+            <div style={{wordBreak: "break-word", marginBottom: 4}}>{hoverTip.name}</div>
+            <div style={{fontWeight: 600, fontSize: 13}}>
+              {i18next.t("task:Score")}：{hoverTip.score}
+              {i18next.t("task:Score Unit")}
+            </div>
+          </div>
+        ) : null}
       </div>
       {showGroupLegend ? (
         <div
