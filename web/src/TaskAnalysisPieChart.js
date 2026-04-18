@@ -77,7 +77,6 @@ export default function TaskAnalysisPieChart({categories, chartRef}) {
   if (bandData.length === 0) {
     return null;
   }
-  const totalItems = bandData.reduce((sum, d) => sum + d.count, 0);
   const scoreUnit = i18next.t("task:Score Unit");
   const data = bandData.map((d, i) => ({
     name: `${d.band}${scoreUnit} (${d.count}${i18next.t("task:Item count unit")})`,
@@ -95,16 +94,10 @@ export default function TaskAnalysisPieChart({categories, chartRef}) {
       top: "center",
       textStyle: {fontSize: 12, color: "#000"},
     },
-    title: {
-      left: "center",
-      top: "8%",
-      textStyle: {fontSize: 13, color: "#000"},
-      text: i18next.t("task:Score distribution") + ` (${totalItems})`,
-    },
     series: [{
       type: "pie",
       radius: ["40%", "70%"],
-      center: ["40%", "55%"],
+      center: ["40%", "52%"],
       avoidLabelOverlap: true,
       itemStyle: {borderColor: "#fff", borderWidth: 2},
       label: {fontSize: 12, color: "#000"},
