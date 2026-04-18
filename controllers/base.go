@@ -152,6 +152,21 @@ func getStoreNamesForUser(username string) ([]string, error) {
 	return names, nil
 }
 
+// narrowStoreAdminStoreNames applies optional ?store= filter for store-level admins.
+// If requestedStore is empty, returns allowed unchanged. If non-empty, returns that store
+// only when it exists in allowed; otherwise ok is false.
+func narrowStoreAdminStoreNames(allowed []string, requestedStore string) ([]string, bool) {
+	if requestedStore == "" {
+		return allowed, true
+	}
+	for _, n := range allowed {
+		if n == requestedStore {
+			return []string{requestedStore}, true
+		}
+	}
+	return nil, false
+}
+
 func wrapActionResponse(affected bool, e ...error) *Response {
 	if len(e) != 0 && e[0] != nil {
 		return &Response{Status: "error", Msg: e[0].Error()}

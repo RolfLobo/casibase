@@ -58,23 +58,17 @@ func (c *ApiController) GetGlobalMessages() {
 		var messages []*object.Message
 		var err error
 
-		if c.IsGlobalAdmin() {
-			count, err = object.GetMessageCount("admin", field, value, store)
-			if err != nil {
-				c.ResponseError(err.Error())
-				return
-			}
-			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
-			messages, err = object.GetPaginationMessages("admin", paginator.Offset(), limitInt, field, value, sortField, sortOrder, store)
-		} else if c.IsStoreAdmin() {
+		if c.IsStoreAdmin() {
 			// Store admin sees messages belonging to their stores
 			storeNames, err2 := getStoreNamesForUser(username)
 			if err2 != nil {
 				c.ResponseError(err2.Error())
 				return
 			}
-			if store != "" {
-				storeNames = []string{store}
+			storeNames, ok := narrowStoreAdminStoreNames(storeNames, store)
+			if !ok {
+				c.ResponseError(c.T("controllers:You can only access data from your assigned store"))
+				return
 			}
 			count, err = object.GetMessageCountByStoreNames(storeNames, field, value)
 			if err != nil {
@@ -83,6 +77,14 @@ func (c *ApiController) GetGlobalMessages() {
 			}
 			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
 			messages, err = object.GetPaginationMessagesByStoreNames(storeNames, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		} else if c.IsGlobalAdmin() {
+			count, err = object.GetMessageCount("admin", field, value, store)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			messages, err = object.GetPaginationMessages("admin", paginator.Offset(), limitInt, field, value, sortField, sortOrder, store)
 		} else {
 			// Regular user sees only their own messages
 			count, err = object.GetMessageCountByUser(username, store, field, value)

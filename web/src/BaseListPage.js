@@ -22,12 +22,20 @@ import * as FormBackend from "./backend/FormBackend";
 
 const {confirm} = Modal;
 
+function storeNameFromProps(props) {
+  const routeStore = props.match?.params?.storeName;
+  if (routeStore) {
+    return routeStore;
+  }
+  return Setting.getRequestStore(props.account);
+}
+
 class BaseListPage extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       classes: props,
-      storeName: this.props.match?.params.storeName || Setting.getRequestStore(this.props.account),
+      storeName: storeNameFromProps(props),
       data: [],
       pagination: {
         current: 1,
@@ -45,13 +53,33 @@ class BaseListPage extends React.Component {
 
   handleStoreChange = () => {
     this.setState({
-      storeName: this.props.match?.params.storeName || Setting.getRequestStore(this.props.account),
+      storeName: storeNameFromProps(this.props),
     },
     () => {
       const {pagination} = this.state;
       this.fetch({pagination});
     });
   };
+
+  getApiStoreName() {
+    return storeNameFromProps(this.props);
+  }
+
+  componentDidUpdate(prevProps) {
+    const prevStore = prevProps.match?.params?.storeName;
+    const nextStore = this.props.match?.params?.storeName;
+    if (prevStore !== nextStore) {
+      this.setState(
+        (state, props) => ({
+          storeName: storeNameFromProps(props),
+          pagination: {...state.pagination, current: 1},
+        }),
+        () => {
+          this.fetch({pagination: this.state.pagination});
+        }
+      );
+    }
+  }
 
   componentDidMount() {
     window.addEventListener("storeChanged", this.handleStoreChange);

@@ -111,7 +111,7 @@ class ChatListPage extends BaseListPage {
       messageCount: 0,
       tokenCount: 0,
       needTitle: true,
-      store: this.state.storeName,
+      store: this.getApiStoreName(),
     };
   }
 
@@ -611,7 +611,7 @@ class ChatListPage extends BaseListPage {
     }
 
     this.setState({loading: true});
-    ChatBackend.getGlobalChats(params.pagination.current, params.pagination.pageSize, field, value, sortField, sortOrder, this.state.storeName)
+    ChatBackend.getGlobalChats(params.pagination.current, params.pagination.pageSize, field, value, sortField, sortOrder, this.getApiStoreName())
       .then((res) => {
         this.setState({
           loading: false,

@@ -72,7 +72,7 @@ class MessageListPage extends BaseListPage {
       tokenCount: 0,
       textTokenCount: 0,
       price: 0.0,
-      store: this.state.storeName,
+      store: this.getApiStoreName(),
     };
   }
 
@@ -568,7 +568,7 @@ class MessageListPage extends BaseListPage {
       value = params.type;
     }
     this.setState({loading: true});
-    MessageBackend.getGlobalMessages(params.pagination.current, params.pagination.pageSize, field, value, sortField, sortOrder, this.state.storeName)
+    MessageBackend.getGlobalMessages(params.pagination.current, params.pagination.pageSize, field, value, sortField, sortOrder, this.getApiStoreName())
       .then((res) => {
         this.setState({
           loading: false,

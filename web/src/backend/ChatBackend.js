@@ -15,7 +15,7 @@
 import * as Setting from "../Setting";
 
 export function getGlobalChats(page = "", pageSize = "", field = "", value = "", sortField = "", sortOrder = "", store = "") {
-  return fetch(`${Setting.ServerUrl}/api/get-global-chats?p=${page}&pageSize=${pageSize}&field=${field}&value=${value}&sortField=${sortField}&sortOrder=${sortOrder}&store=${store}`, {
+  return fetch(`${Setting.ServerUrl}/api/get-global-chats?p=${page}&pageSize=${pageSize}&field=${field}&value=${value}&sortField=${sortField}&sortOrder=${sortOrder}&store=${encodeURIComponent(store)}`, {
     method: "GET",
     credentials: "include",
     headers: {
