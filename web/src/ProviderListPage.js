@@ -52,7 +52,7 @@ class ProviderListPage extends BaseListPage {
       inputPricePerThousandTokens: 0.0,
       outputPricePerThousandTokens: 0.0,
       currency: "USD",
-      providerUrl: "https://platform.openai.com/account/api-keys",
+      providerUrl: "",
       apiVersion: "",
       apiKey: "",
       network: "",
@@ -258,23 +258,6 @@ class ProviderListPage extends BaseListPage {
         key: "apiKey",
         width: "240px",
         sorter: (a, b) => a.apiKey.localeCompare(b.apiKey),
-      },
-      {
-        title: i18next.t("general:Provider URL"),
-        dataIndex: "providerUrl",
-        key: "providerUrl",
-        // width: "250px",
-        sorter: (a, b) => a.providerUrl.localeCompare(b.providerUrl),
-        ...this.getColumnSearchProps("providerUrl"),
-        render: (text, record, index) => {
-          return (
-            <a target="_blank" rel="noreferrer" href={text}>
-              {
-                Setting.getShortText(text, 80)
-              }
-            </a>
-          );
-        },
       },
       {
         title: i18next.t("store:Is default"),

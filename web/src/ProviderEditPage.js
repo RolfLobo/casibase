@@ -104,6 +104,10 @@ class ProviderEditPage extends React.Component {
     return Setting.getLabel(i18next.t("general:Provider URL"), i18next.t("general:Provider URL - Tooltip"));
   }
 
+  modelCategoryShowsProviderUrlInput(type) {
+    return ["Local", "Ollama", "Azure", "Volcano Engine", "Tencent Cloud"].includes(type);
+  }
+
   getRegionLabel(provider) {
     if (provider.category === "Blockchain") {
       if (provider.type === "ChainMaker") {
@@ -1189,16 +1193,20 @@ class ProviderEditPage extends React.Component {
             </>
           ) : null
         }
-        <Row style={{marginTop: "20px"}} >
-          <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
-            {this.getProviderUrlLabel(this.state.provider)} :
-          </Col>
-          <Col span={22} >
-            <Input prefix={<LinkOutlined />} value={this.state.provider.providerUrl} onChange={e => {
-              this.updateProviderField("providerUrl", e.target.value);
-            }} />
-          </Col>
-        </Row>
+        {
+          (this.state.provider.category !== "Model" || this.modelCategoryShowsProviderUrlInput(this.state.provider.type)) ? (
+            <Row style={{marginTop: "20px"}} >
+              <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                {this.getProviderUrlLabel(this.state.provider)} :
+              </Col>
+              <Col span={22} >
+                <Input prefix={<LinkOutlined />} value={this.state.provider.providerUrl} onChange={e => {
+                  this.updateProviderField("providerUrl", e.target.value);
+                }} />
+              </Col>
+            </Row>
+          ) : null
+        }
         <Row style={{marginTop: "20px"}} >
           <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
             {Setting.getLabel(i18next.t("store:Is default"), i18next.t("store:Is default - Tooltip"))} :
