@@ -176,6 +176,52 @@ func GetChatCount(owner string, field string, value string, store string) (int64
 	return session.Count(&Chat{})
 }
 
+func GetChatCountByStoreNames(storeNames []string, field, value string) (int64, error) {
+	if len(storeNames) == 0 {
+		return 0, nil
+	}
+	session := GetDbSession("", -1, -1, field, value, "", "")
+	session = session.In("store", storeNames)
+	return session.Count(&Chat{})
+}
+
+func GetPaginationChatsByStoreNames(storeNames []string, offset, limit int, field, value, sortField, sortOrder string) ([]*Chat, error) {
+	if len(storeNames) == 0 {
+		return []*Chat{}, nil
+	}
+	chats := []*Chat{}
+	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
+	session = session.In("store", storeNames)
+	err := session.Find(&chats)
+	if err != nil {
+		return chats, err
+	}
+	return chats, nil
+}
+
+func GetChatCountByUser(user, store, field, value string) (int64, error) {
+	session := GetDbSession("", -1, -1, field, value, "", "")
+	session = session.And("user = ?", user)
+	if store != "" {
+		session = session.And("store = ?", store)
+	}
+	return session.Count(&Chat{})
+}
+
+func GetPaginationChatsByUser(user, store string, offset, limit int, field, value, sortField, sortOrder string) ([]*Chat, error) {
+	chats := []*Chat{}
+	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
+	session = session.And("user = ?", user)
+	if store != "" {
+		session = session.And("store = ?", store)
+	}
+	err := session.Find(&chats)
+	if err != nil {
+		return chats, err
+	}
+	return chats, nil
+}
+
 func getPaginationChatsByMessages(owner string, offset, limit int, value, sortField, sortOrder, store string) ([]*Chat, error) {
 	chats := []*Chat{}
 	session := adapter.engine.NewSession()

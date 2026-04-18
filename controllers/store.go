@@ -51,15 +51,31 @@ func (c *ApiController) GetGlobalStores() {
 			return
 		}
 
+		username := c.GetSessionUsername()
 		limit := util.ParseInt(limit)
-		count, err := object.GetStoreCount(name, field, value)
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
-		}
 
-		paginator := pagination.SetPaginator(c.Ctx, limit, count)
-		stores, err := object.GetPaginationStores(paginator.Offset(), limit, name, field, value, sortField, sortOrder)
+		var count int64
+		var stores []*object.Store
+		var err error
+
+		if c.IsGlobalAdmin() {
+			count, err = object.GetStoreCount(name, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limit, count)
+			stores, err = object.GetPaginationStores(paginator.Offset(), limit, name, field, value, sortField, sortOrder)
+		} else {
+			// Store admin: only their own stores
+			count, err = object.GetStoreCountByOwner(username, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limit, count)
+			stores, err = object.GetPaginationStoresByOwner(username, paginator.Offset(), limit, field, value, sortField, sortOrder)
+		}
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
@@ -75,7 +91,7 @@ func (c *ApiController) GetGlobalStores() {
 			return
 		}
 
-		c.ResponseOk(stores, paginator.Nums())
+		c.ResponseOk(stores, count)
 	}
 }
 
@@ -87,16 +103,19 @@ func (c *ApiController) GetGlobalStores() {
 // @Success 200 {array} object.Store The Response object
 // @router /get-stores [get]
 func (c *ApiController) GetStores() {
-	owner := c.Input().Get("owner")
+	var stores []*object.Store
+	var err error
 
-	stores, err := object.GetStores(owner)
+	if c.IsGlobalAdmin() {
+		stores, err = object.GetGlobalStores()
+	} else {
+		username := c.GetSessionUsername()
+		stores, err = object.GetStores(username)
+	}
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
 	}
-
-	// Apply store isolation based on user's Homepage field
-	stores = FilterStoresByHomepage(stores, c.GetSessionUser())
 
 	c.ResponseOk(stores)
 }
@@ -158,6 +177,11 @@ func (c *ApiController) UpdateStore() {
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
+	}
+
+	// Store admin cannot change the Owner field
+	if !c.IsGlobalAdmin() && c.IsStoreAdmin() {
+		store.Owner = oldStore.Owner
 	}
 
 	if oldStore.IsDefault && !store.IsDefault {
@@ -310,15 +334,19 @@ func (c *ApiController) RefreshStoreVectors() {
 // @Success 200 {array} object.Store The Response object
 // @router /get-store-names [get]
 func (c *ApiController) GetStoreNames() {
-	owner := c.Input().Get("owner")
-	storeNames, err := object.GetStoresByFields(owner, []string{"name", "display_name"}...)
+	var storeNames []*object.Store
+	var err error
+
+	if c.IsGlobalAdmin() {
+		storeNames, err = object.GetStoresByFields("", []string{"name", "display_name"}...)
+	} else {
+		username := c.GetSessionUsername()
+		storeNames, err = object.GetStoresByFields(username, []string{"name", "display_name"}...)
+	}
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
 	}
-
-	// Apply store isolation based on user's Homepage field
-	storeNames = FilterStoresByHomepage(storeNames, c.GetSessionUser())
 
 	c.ResponseOk(storeNames)
 }

@@ -139,6 +139,19 @@ func FilterStoresByHomepage(stores []*object.Store, user *casdoorsdk.User) []*ob
 	return stores
 }
 
+// getStoreNamesForUser returns names of all stores owned by the given user.
+func getStoreNamesForUser(username string) ([]string, error) {
+	stores, err := object.GetStores(username)
+	if err != nil {
+		return nil, err
+	}
+	names := make([]string, 0, len(stores))
+	for _, s := range stores {
+		names = append(names, s.Name)
+	}
+	return names, nil
+}
+
 func wrapActionResponse(affected bool, e ...error) *Response {
 	if len(e) != 0 && e[0] != nil {
 		return &Response{Status: "error", Msg: e[0].Error()}

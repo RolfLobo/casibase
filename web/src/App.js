@@ -678,6 +678,15 @@ class App extends Component {
       if (window.location.pathname === "/") {
         Setting.goToLinkSoft(this, "/videos");
       }
+    } else if (!Setting.isAdminUser(this.state.account) && !Setting.isChatAdminUser(this.state.account)) {
+      // Regular user: only show Chat
+      res.push(Setting.getItem(<Link to="/chat">{i18next.t("general:Chat")}</Link>, "/chat"));
+
+      if (window.location.pathname === "/") {
+        Setting.goToLinkSoft(this, "/chat");
+      }
+
+      return res;
     } else {
       const textColor = this.state.themeAlgorithm.includes("dark") ? "white" : "black";
       const twoToneColor = this.state.themeData.colorPrimary;

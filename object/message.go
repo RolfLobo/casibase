@@ -418,6 +418,52 @@ func GetMessageCount(owner string, field string, value string, store string) (in
 	return session.Count(&Message{})
 }
 
+func GetMessageCountByStoreNames(storeNames []string, field, value string) (int64, error) {
+	if len(storeNames) == 0 {
+		return 0, nil
+	}
+	session := GetDbSession("", -1, -1, field, value, "", "")
+	session = session.In("store", storeNames)
+	return session.Count(&Message{})
+}
+
+func GetPaginationMessagesByStoreNames(storeNames []string, offset, limit int, field, value, sortField, sortOrder string) ([]*Message, error) {
+	if len(storeNames) == 0 {
+		return []*Message{}, nil
+	}
+	messages := []*Message{}
+	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
+	session = session.In("store", storeNames)
+	err := session.Find(&messages)
+	if err != nil {
+		return messages, err
+	}
+	return messages, nil
+}
+
+func GetMessageCountByUser(user, store, field, value string) (int64, error) {
+	session := GetDbSession("", -1, -1, field, value, "", "")
+	session = session.And("user = ?", user)
+	if store != "" {
+		session = session.And("store = ?", store)
+	}
+	return session.Count(&Message{})
+}
+
+func GetPaginationMessagesByUser(user, store string, offset, limit int, field, value, sortField, sortOrder string) ([]*Message, error) {
+	messages := []*Message{}
+	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
+	session = session.And("user = ?", user)
+	if store != "" {
+		session = session.And("store = ?", store)
+	}
+	err := session.Find(&messages)
+	if err != nil {
+		return messages, err
+	}
+	return messages, nil
+}
+
 func GetPaginationMessages(owner string, offset, limit int, field, value, sortField, sortOrder, store string) ([]*Message, error) {
 	messages := []*Message{}
 	session := GetDbSession(owner, offset, limit, field, value, sortField, sortOrder)

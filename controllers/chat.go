@@ -48,20 +48,51 @@ func (c *ApiController) GetGlobalChats() {
 
 		c.ResponseOk(chats)
 	} else {
-		limit := util.ParseInt(limit)
-		count, err := object.GetChatCount("", field, value, store)
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
+		limitInt := util.ParseInt(limit)
+		username := c.GetSessionUsername()
+
+		var count int64
+		var chats []*object.Chat
+		var err error
+
+		if c.IsGlobalAdmin() {
+			count, err = object.GetChatCount("", field, value, store)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			chats, err = object.GetPaginationChats("", paginator.Offset(), limitInt, field, value, sortField, sortOrder, store)
+		} else if c.IsStoreAdmin() {
+			// Store admin sees chats belonging to their stores
+			storeNames, err2 := getStoreNamesForUser(username)
+			if err2 != nil {
+				c.ResponseError(err2.Error())
+				return
+			}
+			count, err = object.GetChatCountByStoreNames(storeNames, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			chats, err = object.GetPaginationChatsByStoreNames(storeNames, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		} else {
+			// Regular user sees only their own chats
+			count, err = object.GetChatCountByUser(username, store, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			chats, err = object.GetPaginationChatsByUser(username, store, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
 		}
-		paginator := pagination.SetPaginator(c.Ctx, limit, count)
-		chats, err := object.GetPaginationChats("", paginator.Offset(), limit, field, value, sortField, sortOrder, store)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
 
-		c.ResponseOk(chats, paginator.Nums())
+		c.ResponseOk(chats, count)
 	}
 }
 

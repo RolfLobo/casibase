@@ -128,7 +128,7 @@ class StoreListPage extends BaseListPage {
   newStore() {
     const randomName = Setting.getRandomName();
     return {
-      owner: "admin",
+      owner: this.props.account.name,
       name: `store_${randomName}`,
       displayName: `New Store - ${randomName}`,
       createdTime: moment().format(),

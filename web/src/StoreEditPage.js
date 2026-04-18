@@ -213,6 +213,16 @@ class StoreEditPage extends React.Component {
       } style={{marginLeft: "5px"}} type="inner">
         <Row style={{marginTop: "10px"}} >
           <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+            {Setting.getLabel(i18next.t("general:Owner"), i18next.t("general:Owner - Tooltip"))} :
+          </Col>
+          <Col span={22} >
+            <Input value={this.state.store.owner} onChange={e => {
+              this.updateStoreField("owner", e.target.value);
+            }} disabled={!Setting.isAdminUser(this.props.account)} />
+          </Col>
+        </Row>
+        <Row style={{marginTop: "20px"}} >
+          <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
             {Setting.getLabel(i18next.t("general:Name"), i18next.t("general:Name - Tooltip"))} :
           </Col>
           <Col span={22} >

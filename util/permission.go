@@ -29,6 +29,22 @@ func IsAnonymousUserByUsername(username string) bool {
 	return strings.HasPrefix(username, "u-") && len(username) == 10
 }
 
+// IsGlobalAdmin checks if the user is a system-level admin (IsAdmin flag only)
+func IsGlobalAdmin(user *casdoorsdk.User) bool {
+	if user == nil {
+		return false
+	}
+	return user.IsAdmin
+}
+
+// IsStoreAdmin checks if the user is a store-level admin (chat-admin type or 教师 tag)
+func IsStoreAdmin(user *casdoorsdk.User) bool {
+	if user == nil {
+		return false
+	}
+	return user.Type == UserTypeChatAdmin || user.Tag == "教师"
+}
+
 // IsAdmin checks if the user is either a system admin or a chat-admin
 func IsAdmin(user *casdoorsdk.User) bool {
 	if user == nil {

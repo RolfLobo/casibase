@@ -141,6 +141,16 @@ func (c *ApiController) IsAdmin() bool {
 	return util.IsAdmin(user)
 }
 
+func (c *ApiController) IsGlobalAdmin() bool {
+	user := c.GetSessionUser()
+	return util.IsGlobalAdmin(user)
+}
+
+func (c *ApiController) IsStoreAdmin() bool {
+	user := c.GetSessionUser()
+	return util.IsStoreAdmin(user)
+}
+
 func DenyRequest(ctx *context.Context) {
 	responseError(ctx, "auth:Unauthorized operation")
 }

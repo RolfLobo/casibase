@@ -30,7 +30,6 @@ import (
 // @Success 200 {array} object.Message The Response object
 // @router /get-global-messages [get]
 func (c *ApiController) GetGlobalMessages() {
-	owner := "admin"
 	limit := c.Input().Get("pageSize")
 	page := c.Input().Get("p")
 	field := c.Input().Get("field")
@@ -47,20 +46,51 @@ func (c *ApiController) GetGlobalMessages() {
 		}
 		c.ResponseOk(messages)
 	} else {
-		limit := util.ParseInt(limit)
-		count, err := object.GetMessageCount(owner, field, value, store)
-		if err != nil {
-			c.ResponseError(err.Error())
-			return
+		limitInt := util.ParseInt(limit)
+		username := c.GetSessionUsername()
+
+		var count int64
+		var messages []*object.Message
+		var err error
+
+		if c.IsGlobalAdmin() {
+			count, err = object.GetMessageCount("admin", field, value, store)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			messages, err = object.GetPaginationMessages("admin", paginator.Offset(), limitInt, field, value, sortField, sortOrder, store)
+		} else if c.IsStoreAdmin() {
+			// Store admin sees messages belonging to their stores
+			storeNames, err2 := getStoreNamesForUser(username)
+			if err2 != nil {
+				c.ResponseError(err2.Error())
+				return
+			}
+			count, err = object.GetMessageCountByStoreNames(storeNames, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			messages, err = object.GetPaginationMessagesByStoreNames(storeNames, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
+		} else {
+			// Regular user sees only their own messages
+			count, err = object.GetMessageCountByUser(username, store, field, value)
+			if err != nil {
+				c.ResponseError(err.Error())
+				return
+			}
+			paginator := pagination.SetPaginator(c.Ctx, limitInt, count)
+			messages, err = object.GetPaginationMessagesByUser(username, store, paginator.Offset(), limitInt, field, value, sortField, sortOrder)
 		}
-		paginator := pagination.SetPaginator(c.Ctx, limit, count)
-		messages, err := object.GetPaginationMessages(owner, paginator.Offset(), limit, field, value, sortField, sortOrder, store)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
 
-		c.ResponseOk(messages, paginator.Nums())
+		c.ResponseOk(messages, count)
 	}
 }
 
