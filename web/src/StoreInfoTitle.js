@@ -21,7 +21,7 @@ import * as ChatBackend from "./backend/ChatBackend";
 import i18next from "i18next";
 
 const StoreInfoTitle = (props) => {
-  const {chat, stores, onChatUpdated, onStoreChange, autoRead, onUpdateAutoRead, account, paneCount = 1, onPaneCountChange, showPaneControls = false} = props;
+  const {chat, stores, onChatUpdated, onStoreChange, autoRead, onUpdateAutoRead, account, paneCount = 1, onPaneCountChange, showPaneControls = false, generationMode = "text", onGenerationModeChange} = props;
 
   const [modelProviders, setModelProviders] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
@@ -125,6 +125,16 @@ const StoreInfoTitle = (props) => {
     }
   }, [chat, defaultStore, storeInfo]);
 
+  const filteredModelProviders = useMemo(() => {
+    if (!modelProviders.length) {
+      return [];
+    }
+    if (generationMode === "image") {
+      return modelProviders.filter(p => Setting.isImageGenerationModelProvider(p));
+    }
+    return modelProviders.filter(p => !Setting.isImageGenerationModelProvider(p));
+  }, [modelProviders, generationMode]);
+
   // Combined update function to handle both store and provider updates
   const updateStoreAndChat = async(newStore, newProvider) => {
     if (isUpdating) {return;} // Prevent concurrent updates
@@ -204,13 +214,24 @@ const StoreInfoTitle = (props) => {
 
   const handleProviderChange = (value) => {
     // Find the provider object
-    const newProvider = modelProviders.find(provider => provider.name === value);
+    const newProvider = filteredModelProviders.find(provider => provider.name === value);
     if (newProvider && storeInfo) {
 
       // Trigger the combined update
       updateStoreAndChat(null, newProvider.name);
     }
   };
+
+  useEffect(() => {
+    if (isUpdating || !chat || filteredModelProviders.length === 0) {
+      return;
+    }
+    const current = selectedProvider || chat?.modelProvider || storeInfo?.modelProvider;
+    const valid = filteredModelProviders.some(p => p.name === current);
+    if (!valid) {
+      updateStoreAndChat(null, filteredModelProviders[0].name);
+    }
+  }, [generationMode, filteredModelProviders, chat?.name, chat?.modelProvider, storeInfo?.modelProvider, isUpdating]);
 
   // Pane control functions
   const addPane = () => {
@@ -277,29 +298,48 @@ const StoreInfoTitle = (props) => {
             </Select>
           </div>)}
 
+        {modelProviders.length > 0 && typeof onGenerationModeChange === "function" && (
+          <div style={{marginRight: "20px"}}>
+            {!isMobile && <span style={{marginRight: "10px"}}>{i18next.t("chat:Mode")}:</span>}
+            <Select
+              value={generationMode}
+              style={{width: isMobile ? "34vw" : "11rem"}}
+              onChange={onGenerationModeChange}
+              disabled={isUpdating}
+            >
+              <Select.Option value="text">{i18next.t("chat:Text generation")}</Select.Option>
+              <Select.Option value="image">{i18next.t("chat:Image generation")}</Select.Option>
+            </Select>
+          </div>
+        )}
+
         {modelProviders.length > 0 && (
           <div>
             {!isMobile && <span style={{marginRight: "10px"}}>{i18next.t("general:Model")}:</span>}
-            <Select value={selectedProvider || chat?.modelProvider || storeInfo?.modelProvider || (modelProviders[0]?.name)} style={{width: isMobile ? "35vw" : "15rem"}} onChange={handleProviderChange} disabled={isUpdating} popupMatchSelectWidth={false} optionLabelProp="children" suffixIcon={<div />}>
-              {modelProviders.map(provider => {
-                const displayName = Setting.getProviderDisplayName(provider);
-                return (
-                  <Select.Option
-                    key={provider.name}
-                    value={provider.name}
-                  >
-                    <div style={{display: "flex", alignItems: "center"}}>
-                      <img
-                        src={Setting.getProviderLogoURL(provider)}
-                        alt={provider.name}
-                        style={{width: 20, height: 20, marginRight: 8}}
-                      />
-                      <span>{displayName}</span>
-                    </div>
-                  </Select.Option>
-                );
-              })}
-            </Select>
+            {filteredModelProviders.length === 0 ? (
+              <span style={{color: "#999"}}>{i18next.t("chat:No models for this mode")}</span>
+            ) : (
+              <Select value={selectedProvider || chat?.modelProvider || storeInfo?.modelProvider || (filteredModelProviders[0]?.name)} style={{width: isMobile ? "35vw" : "15rem"}} onChange={handleProviderChange} disabled={isUpdating} popupMatchSelectWidth={false} optionLabelProp="children" suffixIcon={<div />}>
+                {filteredModelProviders.map(provider => {
+                  const displayName = Setting.getProviderDisplayName(provider);
+                  return (
+                    <Select.Option
+                      key={provider.name}
+                      value={provider.name}
+                    >
+                      <div style={{display: "flex", alignItems: "center"}}>
+                        <img
+                          src={Setting.getProviderLogoURL(provider)}
+                          alt={provider.name}
+                          style={{width: 20, height: 20, marginRight: 8}}
+                        />
+                        <span>{displayName}</span>
+                      </div>
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            )}
           </div>)}
 
         {

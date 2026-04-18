@@ -2127,6 +2127,76 @@ export function getProviderAzureApiVersionOptions() {
   ]);
 }
 
+// Whether a Model-category provider is configured for image generation (vs chat/text).
+export function isImageGenerationModelProvider(provider) {
+  if (!provider || provider.category !== "Model") {
+    return false;
+  }
+  const subType = (provider.subType || "").trim();
+  const type = provider.type || "";
+  const lower = subType.toLowerCase();
+
+  if (type === "OpenAI" || type === "Azure") {
+    if (lower.startsWith("gpt-image") || lower.includes("dall-e")) {
+      return true;
+    }
+  }
+  if (type === "Gemini") {
+    if (lower.includes("imagen-") || lower === "gemini-2.5-flash-image" ||
+        lower.includes("gemini-3.1-flash-image") || lower.includes("gemini-3-pro-image")) {
+      return true;
+    }
+  }
+  if (type === "Alibaba Cloud") {
+    if (lower.includes("wanx") && (lower.includes("t2i") || lower.includes("wanx-v"))) {
+      return true;
+    }
+  }
+  if (type === "Volcano Engine") {
+    if (lower.includes("seedream")) {
+      return true;
+    }
+  }
+  if (type === "Grok") {
+    if (lower.includes("grok-2-image") || lower === "grok-2-image-latest") {
+      return true;
+    }
+  }
+  if (lower.includes("dall-e") || lower.startsWith("gpt-image")) {
+    return true;
+  }
+  if (lower.includes("imagen-") && lower.includes("generate")) {
+    return true;
+  }
+  if (lower.includes("seedream")) {
+    return true;
+  }
+  if (lower.includes("wanx") && (lower.includes("t2i") || lower.includes("wanx-v"))) {
+    return true;
+  }
+  if (/(^|-)image(-|preview)/i.test(subType) && !lower.includes("embedding") && type === "Gemini") {
+    return true;
+  }
+  return false;
+}
+
+export function loadChatGenerationMode(owner, chatName) {
+  if (!owner || !chatName) {
+    return "text";
+  }
+  const raw = localStorage.getItem(`casibase_chat_generation_mode:${owner}:${chatName}`);
+  return raw === "image" ? "image" : "text";
+}
+
+export function saveChatGenerationMode(owner, chatName, mode) {
+  if (!owner || !chatName) {
+    return;
+  }
+  if (mode === "image" || mode === "text") {
+    localStorage.setItem(`casibase_chat_generation_mode:${owner}:${chatName}`, mode);
+  }
+}
+
 export function getOrganization() {
   const organization = localStorage.getItem("organization");
   return organization !== null ? organization : "All";

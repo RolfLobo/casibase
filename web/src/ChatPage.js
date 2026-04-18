@@ -61,10 +61,19 @@ class ChatPage extends BaseListPage {
       filteredStores: [],
       paneCount: 1,
       storeName: currentStore, // Store the current store name in state
+      generationMode: "text",
     });
 
     this.fetch();
   }
+
+  handleGenerationModeChange = (mode) => {
+    this.setState({generationMode: mode});
+    const chat = this.state.chat;
+    if (chat) {
+      Setting.saveChatGenerationMode(chat.owner, chat.name, mode);
+    }
+  };
 
   componentDidMount() {
     super.componentDidMount();
@@ -582,6 +591,7 @@ class ChatPage extends BaseListPage {
             chat: newChat,
             messages: null,
             messageError: false,
+            generationMode: Setting.loadChatGenerationMode(newChat.owner, newChat.name),
           });
           this.getMessages(newChat);
 
@@ -616,6 +626,7 @@ class ChatPage extends BaseListPage {
               chat: focusedChat,
               // messages: null,
               data: data,
+              generationMode: Setting.loadChatGenerationMode(focusedChat.owner, focusedChat.name),
             });
             this.getMessages(focusedChat);
             this.goToLinkSoft(this.generateChatUrl(focusedChat.name, focusedChat.store));
@@ -739,6 +750,7 @@ class ChatPage extends BaseListPage {
         // messages: null,
         chatMenuVisible: false,
         messageError: false,
+        generationMode: Setting.loadChatGenerationMode(chat.owner, chat.name),
       });
       this.getMessages(chat);
       this.goToLinkSoft(this.generateChatUrl(chat.name, chat.store));
@@ -802,7 +814,7 @@ class ChatPage extends BaseListPage {
                 <Button type="text" icon={this.state.chatMenuCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={this.toggleChatMenuCollapse} style={{marginRight: "8px"}} />
               )}
               <div style={{flex: 1}}>
-                <StoreInfoTitle chat={this.state.chat} stores={this.state.stores} onChatUpdated={this.handleChatUpdate} onStoreChange={this.updateStoreAndUrl} autoRead={this.state.autoRead} onUpdateAutoRead={(checked) => this.setState({autoRead: checked})} account={this.props.account} paneCount={this.state.paneCount} onPaneCountChange={(count) => this.setState({paneCount: count})} showPaneControls={true} />
+                <StoreInfoTitle chat={this.state.chat} stores={this.state.stores} onChatUpdated={this.handleChatUpdate} onStoreChange={this.updateStoreAndUrl} autoRead={this.state.autoRead} onUpdateAutoRead={(checked) => this.setState({autoRead: checked})} account={this.props.account} paneCount={this.state.paneCount} onPaneCountChange={(count) => this.setState({paneCount: count})} showPaneControls={true} generationMode={this.state.generationMode} onGenerationModeChange={this.handleGenerationModeChange} />
               </div>
             </div>
           )}
@@ -888,6 +900,7 @@ class ChatPage extends BaseListPage {
             this.getMessages(chat);
             this.setState({
               chat: chat,
+              generationMode: Setting.loadChatGenerationMode(chat.owner, chat.name),
             });
           }
           this.getGlobalStores();
