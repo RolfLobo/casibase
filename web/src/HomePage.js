@@ -26,6 +26,7 @@ class HomePage extends React.Component {
     this.state = {
       classes: props,
       store: null,
+      storeFetched: false,
     };
   }
 
@@ -43,10 +44,14 @@ class HomePage extends React.Component {
 
           this.setState({
             store: res.data,
+            storeFetched: true,
           });
         } else {
           Setting.showMessage("error", `${i18next.t("general:Failed to get")}: ${res.msg}`);
+          this.setState({storeFetched: true});
         }
+      }).catch(() => {
+        this.setState({storeFetched: true});
       });
   }
 
@@ -64,7 +69,7 @@ class HomePage extends React.Component {
     if (this.props.account?.tag === "Video") {
       return <Redirect to="/videos" />;
     } else {
-      if (this.state.store === null) {
+      if (!this.state.storeFetched) {
         return null;
       } else {
         if (Setting.canViewAllUsers(this.props.account)) {

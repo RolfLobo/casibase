@@ -162,18 +162,27 @@ class App extends Component {
 
   setTheme() {
     StoreBackend.getStore("admin", "_casibase_default_store_").then((res) => {
-      if (res.status === "ok" && res.data) {
-        const color = res.data.themeColor ? res.data.themeColor : Conf.ThemeDefault.colorPrimary;
-        const currentColor = localStorage.getItem("themeColor");
-        if (currentColor !== color) {
-          Setting.setThemeColor(color);
-          localStorage.setItem("themeColor", color);
-        }
-        this.setState({store: res.data});
-      } else {
+      if (res.status !== "ok") {
         Setting.setThemeColor(Conf.ThemeDefault.colorPrimary);
-        Setting.showMessage("error", `${i18next.t("general:Failed to get")}: ${res.msg}`);
+        if (res.msg) {
+          Setting.showMessage("error", `${i18next.t("general:Failed to get")}: ${res.msg}`);
+        } else {
+          Setting.showMessage("error", i18next.t("general:Failed to get"));
+        }
+        return;
       }
+      // No store for owner admin yet (e.g. fresh DB): GetDefaultStore returns null with status ok.
+      if (!res.data) {
+        Setting.setThemeColor(Conf.ThemeDefault.colorPrimary);
+        return;
+      }
+      const color = res.data.themeColor ? res.data.themeColor : Conf.ThemeDefault.colorPrimary;
+      const currentColor = localStorage.getItem("themeColor");
+      if (currentColor !== color) {
+        Setting.setThemeColor(color);
+        localStorage.setItem("themeColor", color);
+      }
+      this.setState({store: res.data});
     });
   }
 
