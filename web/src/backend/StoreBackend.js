@@ -101,3 +101,15 @@ export function refreshStoreVectors(store) {
     body: JSON.stringify(newStore),
   }).then(res => res.json());
 }
+
+export function addSharedStore(owner, name, targetUser) {
+  return fetch(`${Setting.ServerUrl}/api/add-shared-store`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Accept-Language": Setting.getAcceptLanguage(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({owner, name, targetUser}),
+  }).then(res => res.json());
+}

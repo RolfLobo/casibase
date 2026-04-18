@@ -103,6 +103,7 @@ type Store struct {
 	EnableExtraOptions  bool              `json:"enableExtraOptions"`
 	IsDefault           bool              `json:"isDefault"`
 	State               string            `xorm:"varchar(100)" json:"state"`
+	SharedBy            string            `xorm:"varchar(100)" json:"sharedBy"`
 
 	ChatCount    int `xorm:"-" json:"chatCount"`
 	MessageCount int `xorm:"-" json:"messageCount"`

@@ -23,7 +23,8 @@ import i18next from "i18next";
 import {ShowGithubCorner, ThemeDefault} from "./Conf";
 import * as StorageProviderBackend from "./backend/StorageProviderBackend";
 import * as ProviderBackend from "./backend/ProviderBackend";
-import {CopyOutlined, DeleteOutlined} from "@ant-design/icons";
+import StoreShareModal from "./StoreShareModal";
+import {CopyOutlined, DeleteOutlined, ShareAltOutlined} from "@ant-design/icons";
 import copy from "copy-to-clipboard";
 
 const defaultPrompt = "You are an expert in your field and you specialize in using your knowledge to answer or solve people's problems.";
@@ -36,8 +37,18 @@ class StoreListPage extends BaseListPage {
       generating: {},
       providers: {},
       hideChat: this.getHideChatFromStorage(),
+      shareModalVisible: false,
+      shareRecord: null,
     };
   }
+
+  openShareModal = (record) => {
+    this.setState({shareModalVisible: true, shareRecord: record});
+  };
+
+  closeShareModal = () => {
+    this.setState({shareModalVisible: false, shareRecord: null});
+  };
 
   UNSAFE_componentWillMount() {
     super.UNSAFE_componentWillMount();
@@ -444,7 +455,7 @@ class StoreListPage extends BaseListPage {
         title: i18next.t("general:Action"),
         dataIndex: "action",
         key: "action",
-        width: "350px",
+        width: "430px",
         fixed: "right",
         render: (text, record, index) => {
           if (this.state.hideChat) {
@@ -454,6 +465,7 @@ class StoreListPage extends BaseListPage {
                 {
                   !Setting.isLocalAdminUser(this.props.account) ? null : (
                     <React.Fragment>
+                      <Button style={{marginBottom: "10px", marginRight: "10px"}} icon={<ShareAltOutlined />} onClick={() => this.openShareModal(record)}>{i18next.t("store:Share")}</Button>
                       <Button style={{marginBottom: "10px", marginRight: "10px"}} type="primary" onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}`)}>{i18next.t("general:Edit")}</Button>
                       <Popconfirm
                         title={`${i18next.t("general:Sure to delete")}: ${record.name} ?`}
@@ -482,6 +494,7 @@ class StoreListPage extends BaseListPage {
               {
                 !Setting.isLocalAdminUser(this.props.account) ? null : (
                   <React.Fragment>
+                    <Button style={{marginBottom: "10px", marginRight: "10px"}} icon={<ShareAltOutlined />} onClick={() => this.openShareModal(record)}>{i18next.t("store:Share")}</Button>
                     <Button style={{marginBottom: "10px", marginRight: "10px"}} loading={this.state.generating[index]} onClick={() => this.refreshStoreVectors(index)}>{i18next.t("general:Refresh Vectors")}</Button>
                     <Button style={{marginBottom: "10px", marginRight: "10px"}} type="primary" onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}`)}>{i18next.t("general:Edit")}</Button>
                     <Popconfirm
@@ -520,6 +533,18 @@ class StoreListPage extends BaseListPage {
 
     return (
       <div>
+        <StoreShareModal
+          open={this.state.shareModalVisible}
+          store={this.state.shareRecord}
+          onCancel={this.closeShareModal}
+          onSuccess={() => {
+            this.fetch({
+              pagination: this.state.pagination,
+              searchText: this.state.searchText,
+              searchedColumn: this.state.searchedColumn,
+            });
+          }}
+        />
         <Table scroll={{x: "max-content"}} columns={filteredColumns} dataSource={stores} rowKey="name" rowSelection={this.getRowSelection()} size="middle" bordered pagination={paginationProps}
           title={() => (
             <div>

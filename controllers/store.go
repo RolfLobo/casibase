@@ -179,6 +179,8 @@ func (c *ApiController) UpdateStore() {
 		return
 	}
 
+	store.SharedBy = oldStore.SharedBy
+
 	// Store admin cannot change the Owner field
 	if !c.IsGlobalAdmin() && c.IsStoreAdmin() {
 		store.Owner = oldStore.Owner
@@ -349,4 +351,56 @@ func (c *ApiController) GetStoreNames() {
 	}
 
 	c.ResponseOk(storeNames)
+}
+
+type shareStoreForm struct {
+	Owner      string `json:"owner"`
+	Name       string `json:"name"`
+	TargetUser string `json:"targetUser"`
+}
+
+// AddSharedStore duplicates a store for another user (see object.ShareStore).
+// @router /add-shared-store [post]
+func (c *ApiController) AddSharedStore() {
+	if _, ok := c.RequireSignedIn(); !ok {
+		return
+	}
+	if !c.IsAdmin() {
+		c.ResponseError(c.T("auth:this operation requires admin privilege"))
+		return
+	}
+
+	var form shareStoreForm
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &form)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if form.Owner == "" || form.Name == "" || form.TargetUser == "" {
+		c.ResponseError("owner, name and targetUser are required")
+		return
+	}
+
+	src, err := object.GetStore(util.GetIdFromOwnerAndName(form.Owner, form.Name))
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+	if src == nil {
+		c.ResponseError("source store not found")
+		return
+	}
+
+	if !c.IsGlobalAdmin() && src.Owner != c.GetSessionUsername() {
+		c.ResponseError(c.T("auth:Unauthorized operation"))
+		return
+	}
+
+	newStore, err := object.ShareStore(src.Owner, src.Name, form.TargetUser, c.GetSessionUsername())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	c.ResponseOk(newStore)
 }
