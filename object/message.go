@@ -188,12 +188,35 @@ func UpdateMessage(id string, message *Message, isHitOnly bool) (bool, error) {
 	return true, nil
 }
 
+// dataURLMimeType returns e.g. "image/png" from "data:image/png;base64,AAAA...".
+func dataURLMimeType(dataURL string) string {
+	if !strings.HasPrefix(dataURL, "data:") {
+		return ""
+	}
+	rest := dataURL[len("data:"):]
+	semi := strings.Index(rest, ";")
+	if semi <= 0 {
+		return ""
+	}
+	return rest[:semi]
+}
+
 func RefineMessageFiles(message *Message, origin string, lang string) error {
 	text := message.Text
 	// re := regexp.MustCompile(`data:image\/([a-zA-Z]*);base64,([^"]*)`)
-	re := regexp.MustCompile(`data:([a-zA-Z]*\/[a-zA-Z\-\.]*);base64,[a-zA-Z0-9+/=]+`)
+	re := regexp.MustCompile(`data:([a-zA-Z]*\/[a-zA-Z\-\.]*);base64,[a-zA-Z0-9+/=_-]+`)
 	matches := re.FindAllString(text, -1)
-	if matches != nil {
+	if len(matches) > 0 {
+		if message.FileName == "" {
+			mimeType := dataURLMimeType(matches[0])
+			if mimeType != "" {
+				ext, err := getExtFromMimeType(mimeType, lang)
+				if err == nil {
+					message.FileName = fmt.Sprintf("%s.%s", message.Name, ext)
+				}
+			}
+		}
+
 		store, err := GetDefaultStore("admin")
 		if err != nil {
 			return err

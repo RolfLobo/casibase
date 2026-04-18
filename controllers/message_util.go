@@ -119,12 +119,19 @@ func RefineMessageImage(message *object.Message, lang string) error {
 }
 
 func tryStoreRemoteImage(message *object.Message, host string, lang string) {
-	if !strings.Contains(message.Text, "<img src=\"http") {
+	origin := getOriginFromHost(host)
+	// DALL·E etc.: remote image URL in <img src="http...">
+	if strings.Contains(message.Text, "<img src=\"http") {
+		if err := storeImage(message, origin, lang); err != nil {
+			fmt.Printf("storeImage() error: %s\n", err.Error())
+		}
 		return
 	}
-	origin := getOriginFromHost(host)
-	if err := storeImage(message, origin, lang); err != nil {
-		fmt.Printf("storeImage() error: %s\n", err.Error())
+	// gpt-image and similar: inline data URL (tryStoreRemoteImage previously skipped these)
+	if strings.Contains(message.Text, ";base64,") && strings.Contains(message.Text, "data:") {
+		if err := storeInlineBase64Images(message, origin, lang); err != nil {
+			fmt.Printf("storeInlineBase64Images() error: %s\n", err.Error())
+		}
 	}
 }
 
@@ -142,4 +149,13 @@ func storeImage(message *object.Message, origin string, lang string) error {
 		return err
 	}
 	return nil
+}
+
+func storeInlineBase64Images(message *object.Message, origin string, lang string) error {
+	err := object.RefineMessageFiles(message, origin, lang)
+	if err != nil {
+		return err
+	}
+	_, err = object.UpdateMessage(message.GetId(), message, false)
+	return err
 }
