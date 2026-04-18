@@ -434,21 +434,29 @@ func (p *OpenAiModelProvider) QueryText(question string, writer io.Writer, histo
 			return modelResult, nil
 		}
 		quality := getGenerateImageQuality(model)
-		reqUrl := openai.ImageGenerateParams{
-			Prompt:         question,
-			Model:          model,
-			Size:           openai.ImageGenerateParamsSize1024x1024,
-			ResponseFormat: openai.ImageGenerateParamsResponseFormatURL,
-			Quality:        quality,
-			N:              param.NewOpt[int64](1),
+		reqGen := openai.ImageGenerateParams{
+			Prompt:  question,
+			Model:   model,
+			Size:    openai.ImageGenerateParamsSize1024x1024,
+			Quality: quality,
+			N:       param.NewOpt[int64](1),
+		}
+		// response_format is only valid for dall-e-2 / dall-e-3. gpt-image models reject it
+		// and return base64-encoded image data by default.
+		if strings.HasPrefix(model, "dall-e") {
+			reqGen.ResponseFormat = openai.ImageGenerateParamsResponseFormatURL
 		}
 
-		respUrl, err := client.Images.Generate(ctx, reqUrl)
+		respUrl, err := client.Images.Generate(ctx, reqGen)
 		if err != nil {
 			return nil, err
 		}
 
-		url := fmt.Sprintf("<img src=\"%s\" width=\"100%%\" height=\"auto\">", respUrl.Data[0].URL)
+		imgSrc, err := openaiImageHTMLSrc(respUrl)
+		if err != nil {
+			return nil, err
+		}
+		url := fmt.Sprintf("<img src=\"%s\" width=\"100%%\" height=\"auto\">", imgSrc)
 		fmt.Fprint(writer, url)
 		flusher.Flush()
 
@@ -523,6 +531,27 @@ func (p *OpenAiModelProvider) QueryText(question string, writer io.Writer, histo
 	} else {
 		return nil, fmt.Errorf(i18n.Translate(lang, "model:QueryText() error: unknown model type: %s"), model)
 	}
+}
+
+func openaiImageHTMLSrc(resp *openai.ImagesResponse) (string, error) {
+	if resp == nil || len(resp.Data) == 0 {
+		return "", fmt.Errorf("empty image generation response")
+	}
+	img := resp.Data[0]
+	if img.URL != "" {
+		return img.URL, nil
+	}
+	if img.B64JSON == "" {
+		return "", fmt.Errorf("no image URL or base64 payload in response")
+	}
+	mime := "image/png"
+	switch resp.OutputFormat {
+	case openai.ImagesResponseOutputFormatWebP:
+		mime = "image/webp"
+	case openai.ImagesResponseOutputFormatJPEG:
+		mime = "image/jpeg"
+	}
+	return fmt.Sprintf("data:%s;base64,%s", mime, img.B64JSON), nil
 }
 
 func getGenerateImageQuality(model string) openai.ImageGenerateParamsQuality {
