@@ -16,14 +16,14 @@ import React from "react";
 import ReactEcharts from "echarts-for-react";
 import i18next from "i18next";
 
-export default function TaskAnalysisRadarChart({categories, radarMax, chartRef}) {
+export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarMax, chartRef}) {
   if (!categories || categories.length === 0) {
     return null;
   }
   const option = {
     tooltip: {},
     radar: {
-      indicator: categories.map((c) => ({name: c.name, max: radarMax})),
+      indicator: categories.map((c) => ({name: c.name, min: radarMin, max: radarMax})),
       radius: "65%",
       axisName: {
         fontSize: 16,

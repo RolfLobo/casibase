@@ -52,18 +52,19 @@ export default function TaskAnalysisReport({result, downloadFileName}) {
   ];
 
   const categories = result.categories || [];
-  const radarMax = (() => {
+  const radarAxis = (() => {
     if (categories.length === 0) {
-      return 5;
+      return {min: 0, max: 5};
     }
     const maxScore = Math.max(...categories.map((c) => Number(c.score) || 0));
     if (maxScore <= 5) {
-      return 5;
+      return {min: 0, max: 5};
     }
     if (maxScore <= 10) {
-      return 10;
+      return {min: 0, max: 10};
     }
-    return Math.ceil(maxScore * 1.2);
+    // Percentage scale: fixed 50–100 axis range for clearer between-dimension contrast
+    return {min: 50, max: 100};
   })();
 
   const hasCharts = categories.length > 0;
@@ -134,7 +135,7 @@ export default function TaskAnalysisReport({result, downloadFileName}) {
       {hasCharts && (
         <div style={{marginBottom: "24px", height: "320px", display: "flex", gap: "24px"}}>
           <div style={{flex: 1, minWidth: 0}}>
-            <TaskAnalysisRadarChart categories={categories} radarMax={radarMax} chartRef={radarRef} />
+            <TaskAnalysisRadarChart categories={categories} radarMin={radarAxis.min} radarMax={radarAxis.max} chartRef={radarRef} />
           </div>
           <div style={{flex: 1, minWidth: 0}}>
             <TaskAnalysisBarChart categories={categories} chartRef={barRef} />
