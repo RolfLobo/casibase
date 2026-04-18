@@ -96,6 +96,7 @@ type Store struct {
 	ChildStores         []string          `xorm:"mediumtext" json:"childStores"`
 	ChildModelProviders []string          `xorm:"mediumtext" json:"childModelProviders"`
 	ForbiddenWords      []string          `xorm:"text" json:"forbiddenWords"`
+	Owners              []string          `xorm:"mediumtext" json:"owners"`
 	ShowAutoRead        bool              `json:"showAutoRead"`
 	DisableFileUpload   bool              `json:"disableFileUpload"`
 	HideThinking        bool              `json:"hideThinking"`
