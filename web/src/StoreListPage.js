@@ -20,7 +20,7 @@ import BaseListPage from "./BaseListPage";
 import * as Setting from "./Setting";
 import * as StoreBackend from "./backend/StoreBackend";
 import i18next from "i18next";
-import {ShowGithubCorner, ThemeDefault} from "./Conf";
+import * as Conf from "./Conf";
 import * as StorageProviderBackend from "./backend/StorageProviderBackend";
 import * as ProviderBackend from "./backend/ProviderBackend";
 import StoreShareModal from "./StoreShareModal";
@@ -166,13 +166,13 @@ class StoreListPage extends BaseListPage {
       welcomeTitle: i18next.t("chat:Hello, I'm Casibase AI Assistant"),
       welcomeText: i18next.t("chat:I'm here to help answer your questions"),
       prompt: defaultPrompt,
-      themeColor: ThemeDefault.colorPrimary,
+      themeColor: Conf.ThemeDefault.colorPrimary,
       propertiesMap: {},
       knowledgeCount: 5,
       suggestionCount: 3,
       isDefault: false,
       state: "Active",
-      enableExtraOptions: ShowGithubCorner,
+      enableExtraOptions: Conf.ShowGithubCorner,
     };
   }
 
@@ -269,6 +269,25 @@ class StoreListPage extends BaseListPage {
         },
       },
       {
+        title: i18next.t("general:Owner"),
+        dataIndex: "owner",
+        key: "owner",
+        width: "90px",
+        sorter: (a, b) => (a.owner || "").localeCompare(b.owner || ""),
+        ...this.getColumnSearchProps("owner"),
+        render: (text, record, index) => {
+          if (!text || text.startsWith("u-")) {
+            return text;
+          }
+
+          return (
+            <a target="_blank" rel="noreferrer" href={Setting.getMyProfileUrl(this.props.account).replace("/account", `/users/${Conf.AuthConfig.organizationName}/${text}`)}>
+              {text}
+            </a>
+          );
+        },
+      },
+      {
         title: i18next.t("general:Name"),
         dataIndex: "name",
         key: "name",
@@ -277,7 +296,7 @@ class StoreListPage extends BaseListPage {
         ...this.getColumnSearchProps("name"),
         render: (text, record, index) => {
           return (
-            <Link to={`/stores/${record.owner}/${text}/view`}>
+            <Link to={`/stores/${record.owner}/${text}`}>
               {text}
             </Link>
           );
@@ -461,7 +480,7 @@ class StoreListPage extends BaseListPage {
           if (this.state.hideChat) {
             return (
               <div>
-                <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}/view`)}>{i18next.t("general:View")}</Button>
+                <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}/view`)}>{i18next.t("general:Files")}</Button>
                 {
                   !Setting.isLocalAdminUser(this.props.account) ? null : (
                     <React.Fragment>
@@ -485,7 +504,7 @@ class StoreListPage extends BaseListPage {
 
           return (
             <div>
-              <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}/view`)}>{i18next.t("general:View")}</Button>
+              <Button style={{marginTop: "10px", marginBottom: "10px", marginRight: "10px"}} onClick={() => this.props.history.push(`/stores/${record.owner}/${record.name}/view`)}>{i18next.t("general:Files")}</Button>
               <Button style={{marginBottom: "10px", marginRight: "10px"}} icon={<CopyOutlined />} onClick={() => {copy(`${window.location.origin}/${record.owner}/${record.name}/chat`);Setting.showMessage("success", i18next.t("general:Successfully copied"));}}>{i18next.t("general:Copy Link")}</Button>
               <Button style={{marginBottom: "10px", marginRight: "10px"}} onClick={() => {
                 Setting.setStore(record.name);
