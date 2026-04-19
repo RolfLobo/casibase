@@ -40,6 +40,37 @@ func GetIdFromServerNameAndToolName(ServerName, toolName string) string {
 	return ServerName + "__" + toolName
 }
 
+// legacyBuiltinTimeToolNames are former tool ids merged into the single TimeTool.
+var legacyBuiltinTimeToolNames = map[string]struct{}{
+	"current_time":             {},
+	"localtime_to_timestamp": {},
+	"timestamp_to_localtime": {},
+	"timezone_conversion":      {},
+	"weekday":                  {},
+	"time":                     {},
+}
+
+func normalizeLegacyBuiltinToolNames(selectedTools []string) []string {
+	seen := make(map[string]bool)
+	var out []string
+	addTimeTool := false
+	for _, name := range selectedTools {
+		if _, legacy := legacyBuiltinTimeToolNames[name]; legacy || name == "TimeTool" {
+			addTimeTool = true
+			continue
+		}
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+		out = append(out, name)
+	}
+	if addTimeTool {
+		out = append(out, "TimeTool")
+	}
+	return out
+}
+
 func MergeBuiltinAndWebSearchTools(agentClients *AgentClients, selectedTools []string, webSearchEnabled bool) *AgentClients {
 	if webSearchEnabled {
 		if agentClients == nil {
@@ -47,6 +78,8 @@ func MergeBuiltinAndWebSearchTools(agentClients *AgentClients, selectedTools []s
 		}
 		agentClients.WebSearchEnabled = true
 	}
+
+	selectedTools = normalizeLegacyBuiltinToolNames(selectedTools)
 
 	if len(selectedTools) == 0 {
 		return agentClients

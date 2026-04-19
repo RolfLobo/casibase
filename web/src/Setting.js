@@ -2786,11 +2786,7 @@ export function getBuiltinTools() {
       name: "Time Tools",
       icon: "🕐",
       tools: [
-        {name: "current_time", description: "Get current time"},
-        {name: "localtime_to_timestamp", description: "Convert local time to timestamp"},
-        {name: "timestamp_to_localtime", description: "Convert timestamp to local time"},
-        {name: "timezone_conversion", description: "Convert timezone"},
-        {name: "weekday", description: "Calculate weekday"},
+        {name: "TimeTool", description: "Date/time: current, convert timestamps, timezones, weekday (operation parameter)"},
       ],
     },
     {
