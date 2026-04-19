@@ -39,6 +39,7 @@ class ProviderEditPage extends React.Component {
       providerName: props.match.params.providerName,
       provider: null,
       originalProvider: null,
+      modelProviders: [],
       refreshButtonLoading: false,
       isNewProvider: props.location?.state?.isNewProvider || false,
     };
@@ -46,6 +47,31 @@ class ProviderEditPage extends React.Component {
 
   UNSAFE_componentWillMount() {
     this.getProvider();
+  }
+
+  getModelProviders() {
+    if (this.state.modelProviders.length > 0) {
+      return;
+    }
+    ProviderBackend.getProviders("admin")
+      .then((res) => {
+        if (res.status === "ok") {
+          this.setState({
+            modelProviders: res.data.filter(provider => provider.category === "Model"),
+          });
+        }
+      });
+  }
+
+  renderModelProviderOption(provider, index) {
+    return (
+      <Option key={index} value={provider.name}>
+        <img width={20} height={20} style={{marginBottom: "3px", marginRight: "10px"}}
+          src={Setting.getProviderLogoURL({category: provider.category, type: provider.type})}
+          alt={provider.name} />
+        {provider.displayName || provider.name}
+      </Option>
+    );
   }
 
   getProvider() {
@@ -566,7 +592,7 @@ class ProviderEditPage extends React.Component {
               (this.state.provider.category === "Storage" && this.state.provider.type !== "OpenAI File System")) ||
             (this.state.provider.category === "Blockchain" && !["ChainMaker", "Ethereum"].includes(this.state.provider.type)) ||
             ((this.state.provider.category === "Model" || this.state.provider.category === "Embedding") && this.state.provider.type === "Azure") ||
-            (!(["Storage", "Model", "Embedding", "Text-to-Speech", "Speech-to-Text", "Agent", "Blockchain"].includes(this.state.provider.category)))
+            (!(["Storage", "Model", "Embedding", "Text-to-Speech", "Speech-to-Text", "Agent", "Blockchain", "Chat"].includes(this.state.provider.category)))
           ) ? (
               <Row style={{marginTop: "20px"}} >
                 <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
@@ -579,6 +605,27 @@ class ProviderEditPage extends React.Component {
                 </Col>
               </Row>
             ) : null
+        }
+        {
+          this.state.provider.category === "Chat" ? (
+            <Row style={{marginTop: "20px"}} >
+              <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                {this.getClientIdLabel(this.state.provider)} :
+              </Col>
+              <Col span={22} >
+                <Select virtual={false} disabled={isRemote} style={{width: "100%"}} value={this.state.provider.clientId}
+                  onChange={(value) => this.updateProviderField("clientId", value)}
+                  onDropdownVisibleChange={(open) => {if (open) {this.getModelProviders();}}}
+                  showSearch
+                  filterOption={(input, option) =>
+                    option.children[1].toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {this.state.modelProviders.map((provider, index) => this.renderModelProviderOption(provider, index))}
+                </Select>
+              </Col>
+            </Row>
+          ) : null
         }
         {
           (this.state.provider.type === "Local") ? (
