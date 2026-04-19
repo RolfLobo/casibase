@@ -87,14 +87,13 @@ func (c *ApiController) GetMessageAnswer() {
 		return
 	}
 
-	storeId := util.GetIdFromOwnerAndName(chat.Owner, chat.Store)
-	store, err := object.GetStore(storeId)
+	store, err := object.ResolveStoreForChat(chat)
 	if err != nil {
 		c.ResponseErrorStream(message, err.Error())
 		return
 	}
 	if store == nil {
-		c.ResponseErrorStream(message, fmt.Sprintf("The default store is not found"))
+		c.ResponseErrorStream(message, fmt.Sprintf(c.T("account:The store: %s is not found"), chat.Store))
 		return
 	}
 
@@ -144,7 +143,7 @@ func (c *ApiController) GetMessageAnswer() {
 		modelProviderName = chat.ModelProvider
 	}
 
-	modelProvider, modelProviderObj, err := object.GetModelProviderFromContext("admin", modelProviderName, c.GetAcceptLanguage())
+	modelProvider, modelProviderObj, err := object.GetModelProviderFromContext(store.Owner, modelProviderName, c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseErrorStream(message, err.Error())
 		return
@@ -156,13 +155,13 @@ func (c *ApiController) GetMessageAnswer() {
 		return
 	}
 
-	embeddingProvider, embeddingProviderObj, err := object.GetEmbeddingProviderFromContext("admin", chat.User2, c.GetAcceptLanguage())
+	embeddingProvider, embeddingProviderObj, err := object.GetEmbeddingProviderFromContext(store.Owner, chat.User2, c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseErrorStream(message, err.Error())
 		return
 	}
 
-	_, agentProviderObj, err := object.GetAgentProviderFromContext("admin", store.AgentProvider, c.GetAcceptLanguage())
+	_, agentProviderObj, err := object.GetAgentProviderFromContext(store.Owner, store.AgentProvider, c.GetAcceptLanguage())
 	if err != nil {
 		c.ResponseErrorStream(message, err.Error())
 		return
@@ -185,7 +184,7 @@ func (c *ApiController) GetMessageAnswer() {
 		knowledgeCount = 10
 	}
 
-	knowledge, vectorScores, embeddingResult, err := object.GetNearestKnowledge(store.Name, store.VectorStores, store.SearchProvider, embeddingProvider, embeddingProviderObj, modelProvider, "admin", question, knowledgeCount, c.GetAcceptLanguage())
+	knowledge, vectorScores, embeddingResult, err := object.GetNearestKnowledge(store.Name, store.VectorStores, store.SearchProvider, embeddingProvider, embeddingProviderObj, modelProvider, store.Owner, question, knowledgeCount, c.GetAcceptLanguage())
 	if err != nil && err.Error() != "no knowledge vectors found" {
 		err = fmt.Errorf(c.T("message_answer:object.GetNearestKnowledge() error, %s"), err.Error())
 		c.ResponseErrorStream(message, err.Error())

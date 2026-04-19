@@ -159,7 +159,7 @@ func (store *Store) GetVideoData(lang string) ([]string, error) {
 }
 
 func SyncDefaultProvidersToStore(store *Store) error {
-	defaultStore, err := GetDefaultStore("admin")
+	defaultStore, err := GetDefaultStore(store.Owner)
 	if err != nil {
 		return err
 	}

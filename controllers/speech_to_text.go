@@ -45,7 +45,7 @@ func (c *ApiController) ProcessSpeechToText() {
 	}
 	defer audioFile.Close()
 
-	store, err := object.GetStore(storeId)
+	store, err := object.ResolveStoreFromId(storeId)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

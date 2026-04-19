@@ -279,7 +279,7 @@ func (c *ApiController) AddChat() {
 
 	if chat.Store == "" {
 		var store *object.Store
-		store, err = object.GetDefaultStore("admin")
+		store, err = object.GetDefaultStore(c.defaultStoreOwner())
 		if err != nil {
 			c.ResponseError(err.Error())
 			return

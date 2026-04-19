@@ -133,7 +133,7 @@ func (c *ApiController) GetStore() {
 	var store *object.Store
 	var err error
 	if id == "admin/_casibase_default_store_" {
-		store, err = object.GetDefaultStore("admin")
+		store, err = object.GetDefaultStore(c.defaultStoreOwner())
 	} else {
 		store, err = object.GetStoreForGetApi(id)
 	}
@@ -198,14 +198,14 @@ func (c *ApiController) UpdateStore() {
 	}
 
 	if !oldStore.IsDefault && store.IsDefault {
-		stores, err := object.GetGlobalStores()
+		stores, err := object.GetStores(store.Owner)
 		if err != nil {
 			c.ResponseError(err.Error())
 			return
 		}
 
 		for _, store2 := range stores {
-			if store2.GetId() != store.GetId() && store2.IsDefault {
+			if store2.Owner == store.Owner && store2.GetId() != store.GetId() && store2.IsDefault {
 				store2.IsDefault = false
 				success, err = object.UpdateStore(store2.GetId(), store2)
 				if err != nil {

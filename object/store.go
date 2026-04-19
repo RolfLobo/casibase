@@ -56,8 +56,8 @@ type ExampleQuestion struct {
 
 type Store struct {
 	Owner       string `xorm:"varchar(100) notnull pk" json:"owner"`
-	Name        string `xorm:"varchar(100) notnull pk" json:"name"`
-	CreatedTime string `xorm:"varchar(100)" json:"createdTime"`
+	Name        string `xorm:"varchar(100) notnull pk index(idx_store_name_created)" json:"name"`
+	CreatedTime string `xorm:"varchar(100) index(idx_store_name_created)" json:"createdTime"`
 	DisplayName string `xorm:"varchar(100)" json:"displayName"`
 
 	StorageProvider      string   `xorm:"varchar(100)" json:"storageProvider"`
@@ -113,6 +113,7 @@ type Store struct {
 	PropertiesMap map[string]*Properties `xorm:"mediumtext" json:"propertiesMap"`
 }
 
+// GetGlobalStores loads every row in the store table (admin UI / init). Not for hot per-request paths.
 func GetGlobalStores() ([]*Store, error) {
 	stores := []*Store{}
 	err := adapter.engine.Asc("owner").Desc("created_time").Find(&stores)
@@ -145,8 +146,9 @@ func GetDefaultStore(owner string) (*Store, error) {
 		}
 	}
 
+	// GetStores orders by created_time DESC — first Active row is the newest active store.
 	for _, store := range stores {
-		if store.State != "Inactive" && store.StorageProvider != "" && store.ModelProvider != "" && store.EmbeddingProvider != "" {
+		if store.State == "Active" {
 			return store, nil
 		}
 	}
@@ -156,6 +158,36 @@ func GetDefaultStore(owner string) (*Store, error) {
 	}
 
 	return nil, nil
+}
+
+// ResolveStoreFromId loads a store by id, then applies GetStoreForGetApi fallback so chat rows
+// (owner "admin" + store name) still resolve when the store row is owned by a store admin user.
+func ResolveStoreFromId(id string) (*Store, error) {
+	store, err := GetStore(id)
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		return store, nil
+	}
+	// Do not call GetStoreForGetApi here: it would repeat the same GetStore query.
+	return resolveStoreWhenAdminIdMisses(id)
+}
+
+// ResolveStoreByOwnerAndName resolves owner/name like ResolveStoreFromId.
+func ResolveStoreByOwnerAndName(owner string, storeName string) (*Store, error) {
+	if storeName == "" {
+		return nil, nil
+	}
+	return ResolveStoreFromId(util.GetIdFromOwnerAndName(owner, storeName))
+}
+
+// ResolveStoreForChat resolves the store referenced by a chat (same semantics as ResolveStoreByOwnerAndName).
+func ResolveStoreForChat(chat *Chat) (*Store, error) {
+	if chat == nil {
+		return nil, nil
+	}
+	return ResolveStoreByOwnerAndName(chat.Owner, chat.Store)
 }
 
 func getStore(owner string, name string) (*Store, error) {
@@ -180,22 +212,12 @@ func GetStore(id string) (*Store, error) {
 	return getStore(owner, name)
 }
 
-// GetStoreForGetApi resolves owner/name like GetStore. If there is no row for that exact pair
-// and the owner segment is "admin", returns the newest store with the same name under any owner.
-// This fixes links that incorrectly use admin as the owner while the store belongs to another user.
-func GetStoreForGetApi(id string) (*Store, error) {
-	store, err := GetStore(id)
-	if err != nil {
-		return nil, err
-	}
-	if store != nil {
-		return store, nil
-	}
+// resolveStoreWhenAdminIdMisses is used when owner/name is "admin/<storeName>" but no row matches:
+// return the newest row with that store name under any owner (chat rows keep owner "admin").
+// Uses WHERE name = ? ORDER BY created_time DESC — relies on composite index idx_store_name_created (see Store xorm tags).
+func resolveStoreWhenAdminIdMisses(id string) (*Store, error) {
 	owner, name, err := util.GetOwnerAndNameFromIdWithError(id)
-	if err != nil || name == "" {
-		return nil, nil
-	}
-	if owner != "admin" {
+	if err != nil || name == "" || owner != "admin" {
 		return nil, nil
 	}
 	var s Store
@@ -207,6 +229,20 @@ func GetStoreForGetApi(id string) (*Store, error) {
 		return nil, nil
 	}
 	return &s, nil
+}
+
+// GetStoreForGetApi resolves owner/name like GetStore. If there is no row for that exact pair
+// and the owner segment is "admin", returns the newest store with the same name under any owner.
+// This fixes links that incorrectly use admin as the owner while the store belongs to another user.
+func GetStoreForGetApi(id string) (*Store, error) {
+	store, err := GetStore(id)
+	if err != nil {
+		return nil, err
+	}
+	if store != nil {
+		return store, nil
+	}
+	return resolveStoreWhenAdminIdMisses(id)
 }
 
 func UpdateStore(id string, store *Store) (bool, error) {

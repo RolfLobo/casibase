@@ -486,7 +486,7 @@ func GetAgentClients(agentProviderObj agent.AgentProvider) (*agent.AgentClients,
 func GetProviderCount(owner, storeName, field, value string) (int64, error) {
 	session := GetDbSession(owner, -1, -1, field, value, "", "")
 	if storeName != "" {
-		store, err := GetStore(util.GetIdFromOwnerAndName(owner, storeName))
+		store, err := ResolveStoreFromId(util.GetIdFromOwnerAndName(owner, storeName))
 		if err != nil {
 			return 0, err
 		}
@@ -567,7 +567,7 @@ func buildRemoteProviderSession(owner, field, value, storeName string) (*xorm.Se
 		}
 	}
 	if storeName != "" {
-		store, err := GetStore(util.GetIdFromOwnerAndName(owner, storeName))
+		store, err := ResolveStoreFromId(util.GetIdFromOwnerAndName(owner, storeName))
 		if err != nil {
 			return nil, err
 		}
@@ -584,7 +584,7 @@ func GetPaginationProviders(owner, storeName string, offset, limit int, field, v
 	// Fetch from local adapter without pagination to properly merge with remote providers
 	session := GetDbSession(owner, -1, -1, field, value, sortField, sortOrder)
 	if storeName != "" {
-		store, err := GetStore(util.GetIdFromOwnerAndName(owner, storeName))
+		store, err := ResolveStoreFromId(util.GetIdFromOwnerAndName(owner, storeName))
 		if err != nil {
 			return providers, err
 		}

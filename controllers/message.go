@@ -349,8 +349,7 @@ func (c *ApiController) AddMessage() {
 	}
 
 	// Check for forbidden words
-	storeId := util.GetId(message.Owner, message.Store)
-	store, err := object.GetStore(storeId)
+	store, err := object.ResolveStoreByOwnerAndName(message.Owner, message.Store)
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
@@ -380,8 +379,7 @@ func (c *ApiController) AddMessage() {
 			modelProvider := chat.ModelProvider
 			if modelProvider == "" {
 				// Fallback to store's model provider if chat doesn't have one
-				storeId := util.GetId(chat.Owner, chat.Store)
-				store, storeErr := object.GetStore(storeId)
+				store, storeErr := object.ResolveStoreForChat(chat)
 				if storeErr == nil && store != nil {
 					modelProvider = store.ModelProvider
 				}

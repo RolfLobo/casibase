@@ -105,7 +105,7 @@ func getMessageAndChat(messageId string, lang string) (*Message, *Chat, error) {
 
 // getStoreProvider retrieves the text-to-speech provider for a given store ID
 func getStoreProvider(storeId string, lang string) (*Provider, error) {
-	store, err := GetStore(storeId)
+	store, err := ResolveStoreFromId(storeId)
 	if err != nil {
 		return nil, err
 	}

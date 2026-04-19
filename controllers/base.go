@@ -92,6 +92,15 @@ func (c *ApiController) GetSessionUsername() string {
 	return GetUserName(user)
 }
 
+// defaultStoreOwner returns the store owner used to pick a default store for the current session.
+// Store-level admins use their own stores; everyone else uses the built-in "admin" namespace.
+func (c *ApiController) defaultStoreOwner() string {
+	if c.IsStoreAdmin() {
+		return c.GetSessionUsername()
+	}
+	return "admin"
+}
+
 // EnforceStoreIsolation enforces store isolation based on user's Homepage field.
 // Returns the enforced store name and true if isolation check passes, or empty string and false if access denied.
 func (c *ApiController) EnforceStoreIsolation(requestedStoreName string) (string, bool) {

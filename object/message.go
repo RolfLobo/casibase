@@ -21,6 +21,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/casibase/casibase/i18n"
 	"github.com/casibase/casibase/model"
 	"github.com/casibase/casibase/util"
 	"xorm.io/core"
@@ -217,9 +218,26 @@ func RefineMessageFiles(message *Message, origin string, lang string) error {
 			}
 		}
 
-		store, err := GetDefaultStore("admin")
+		var store *Store
+		var err error
+		store, err = ResolveStoreByOwnerAndName(message.Owner, message.Store)
 		if err != nil {
 			return err
+		}
+		if store == nil {
+			store, err = GetDefaultStore(message.Owner)
+			if err != nil {
+				return err
+			}
+		}
+		if store == nil && message.Owner != "admin" {
+			store, err = GetDefaultStore("admin")
+			if err != nil {
+				return err
+			}
+		}
+		if store == nil {
+			return fmt.Errorf(i18n.Translate(lang, "account:The default store is not found"))
 		}
 
 		obj, err := store.GetImageProviderObj(lang)
