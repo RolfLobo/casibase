@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import React from "react";
-import {Button, Card, Cascader, Col, Input, InputNumber, Popover, Row, Select, Switch} from "antd";
+import {Avatar, Button, Card, Cascader, Col, Input, InputNumber, Popover, Row, Select, Spin, Switch} from "antd";
 import * as StoreBackend from "./backend/StoreBackend";
 import * as StorageProviderBackend from "./backend/StorageProviderBackend";
 import * as ProviderBackend from "./backend/ProviderBackend";
+import * as OrganizationUserBackend from "./backend/OrganizationUserBackend";
 import * as Setting from "./Setting";
 import i18next from "i18next";
 import FileTree from "./FileTree";
@@ -52,6 +53,8 @@ class StoreEditPage extends React.Component {
       store: null,
       themeColor: ThemeDefault.colorPrimary,
       isNewStore: props.location?.state?.isNewStore || false,
+      ownerUsers: [],
+      ownerUsersLoading: false,
     };
   }
 
@@ -60,6 +63,25 @@ class StoreEditPage extends React.Component {
     this.getStores();
     this.getStorageProviders();
     this.getProviders();
+  }
+
+  loadOwnerUsers() {
+    if (this.state.ownerUsers.length > 0) {
+      return;
+    }
+    this.setState({ownerUsersLoading: true});
+    OrganizationUserBackend.getOrganizationUsers()
+      .then((res) => {
+        if (res.status === "ok") {
+          this.setState({ownerUsers: res.data || []});
+        } else {
+          Setting.showMessage("error", res.msg || i18next.t("general:Failed to load"));
+        }
+      })
+      .catch((err) => {
+        Setting.showMessage("error", `${i18next.t("general:Failed to load")}: ${err}`);
+      })
+      .finally(() => this.setState({ownerUsersLoading: false}));
   }
 
   renderProviderOption(provider, index) {
@@ -221,9 +243,51 @@ class StoreEditPage extends React.Component {
             {Setting.getLabel(i18next.t("general:Owner"), i18next.t("general:Owner - Tooltip"))} :
           </Col>
           <Col span={22} >
-            <Input value={this.state.store.owner} onChange={e => {
-              this.updateStoreField("owner", e.target.value);
-            }} disabled={!Setting.isAdminUser(this.props.account)} />
+            {Setting.isAdminUser(this.props.account) ? (
+              <Select
+                style={{width: "100%"}}
+                showSearch
+                value={this.state.store.owner}
+                loading={this.state.ownerUsersLoading}
+                onDropdownVisibleChange={(open) => {
+                  if (open) {
+                    this.loadOwnerUsers();
+                  }
+                }}
+                onChange={(value) => this.updateStoreField("owner", value)}
+                filterOption={(input, option) => {
+                  const u = this.state.ownerUsers.find((x) => x.name === option?.value);
+                  if (!u) {
+                    return true;
+                  }
+                  const q = (input || "").trim().toLowerCase();
+                  if (!q) {
+                    return true;
+                  }
+                  return (
+                    (u.name && u.name.toLowerCase().includes(q)) ||
+                    (u.displayName && u.displayName.toLowerCase().includes(q))
+                  );
+                }}
+                notFoundContent={this.state.ownerUsersLoading ? <Spin size="small" /> : null}
+              >
+                {this.state.ownerUsers.map((u) => {
+                  const dn = u.displayName || u.name;
+                  return (
+                    <Option key={u.name} value={u.name}>
+                      <span style={{display: "flex", alignItems: "center", gap: 8}}>
+                        <Avatar size="small" src={u.avatar || undefined}>
+                          {(dn || "?").charAt(0)}
+                        </Avatar>
+                        <span>{`${dn} (${u.name})`}</span>
+                      </span>
+                    </Option>
+                  );
+                })}
+              </Select>
+            ) : (
+              <Input value={this.state.store.owner} disabled />
+            )}
           </Col>
         </Row>
         {
