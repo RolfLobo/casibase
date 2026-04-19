@@ -25,7 +25,8 @@ import (
 const telegramApiBaseUrl = "https://api.telegram.org"
 
 type TelegramChatProvider struct {
-	botToken string
+	botToken   string
+	httpClient *http.Client
 }
 
 type telegramUser struct {
@@ -50,9 +51,10 @@ type telegramUpdate struct {
 	Message  *telegramMessage `json:"message"`
 }
 
-func NewTelegramChatProvider(botToken string) (*TelegramChatProvider, error) {
+func NewTelegramChatProvider(botToken string, httpClient *http.Client) (*TelegramChatProvider, error) {
 	return &TelegramChatProvider{
-		botToken: botToken,
+		botToken:   botToken,
+		httpClient: httpClient,
 	}, nil
 }
 
@@ -66,7 +68,7 @@ func (p *TelegramChatProvider) doPost(method string, payload interface{}) ([]byt
 		return nil, err
 	}
 
-	resp, err := http.Post(p.buildUrl(method), "application/json", bytes.NewReader(body))
+	resp, err := p.httpClient.Post(p.buildUrl(method), "application/json", bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}

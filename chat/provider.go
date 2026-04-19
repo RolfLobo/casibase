@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/casibase/casibase/i18n"
+	"github.com/casibase/casibase/proxy"
 )
 
 type IncomingMessage struct {
@@ -38,7 +39,7 @@ func GetChatProvider(typ string, clientSecret string, lang string) (ChatProvider
 	var err error
 
 	if typ == "Telegram" {
-		p, err = NewTelegramChatProvider(clientSecret)
+		p, err = NewTelegramChatProvider(clientSecret, proxy.ProxyHttpClient)
 	} else {
 		return nil, fmt.Errorf(i18n.Translate(lang, "chat:the chat provider type: %s is not supported"), typ)
 	}
