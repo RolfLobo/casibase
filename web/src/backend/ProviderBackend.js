@@ -91,3 +91,15 @@ export function refreshMcpTools(provider) {
     body: JSON.stringify(newProvider),
   }).then(res => res.json());
 }
+
+export function testMcpProvider(provider) {
+  const newProvider = Setting.deepCopy(provider);
+  return fetch(`${Setting.ServerUrl}/api/test-mcp-provider`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Accept-Language": Setting.getAcceptLanguage(),
+    },
+    body: JSON.stringify(newProvider),
+  }).then(res => res.json());
+}

@@ -24,6 +24,7 @@ import McpToolsTable from "./table/McpToolsTable";
 import ModelTestWidget from "./common/TestModelWidget";
 import TtsTestWidget from "./common/TestTtsWidget";
 import EmbedTestWidget from "./common/TestEmbedWidget";
+import TestMcpWidget from "./common/TestMcpWidget";
 import TestScanWidget from "./common/TestScanWidget";
 import Editor from "./common/Editor";
 
@@ -1116,6 +1117,11 @@ class ProviderEditPage extends React.Component {
           provider={this.state.provider}
           originalProvider={this.state.originalProvider}
           account={this.props.account}
+          onUpdateProvider={this.updateProviderField.bind(this)}
+        />
+        <TestMcpWidget
+          provider={this.state.provider}
+          originalProvider={this.state.originalProvider}
           onUpdateProvider={this.updateProviderField.bind(this)}
         />
         <TestScanWidget

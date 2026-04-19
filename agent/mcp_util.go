@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ThinkInAIXYZ/go-mcp/client"
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/ThinkInAIXYZ/go-mcp/transport"
 )
 
@@ -160,4 +161,77 @@ func GetMCPClientMap(config string, toolsMap map[string]bool) (map[string]*clien
 	}
 
 	return clients, nil
+}
+
+// ResolveMcpToolTarget resolves MCP server name and native tool name.
+// toolKey may be "serverName__toolName" (see GetIdFromServerNameAndToolName) or a bare tool name
+// that appears in exactly one enabled server's tool list.
+func ResolveMcpToolTarget(mcpTools []*McpTools, toolKey string) (serverName, nativeToolName string, err error) {
+	sn, tn := GetServerNameAndToolNameFromId(toolKey)
+	if sn != "" {
+		return sn, tn, nil
+	}
+	var foundServer, foundName string
+	for _, mt := range mcpTools {
+		if !mt.IsEnabled {
+			continue
+		}
+		var toolsList []*protocol.Tool
+		if err := json.Unmarshal([]byte(mt.Tools), &toolsList); err != nil {
+			return "", "", fmt.Errorf("parse tools for server %q: %w", mt.ServerName, err)
+		}
+		for _, t := range toolsList {
+			if t.Name == toolKey {
+				if foundServer != "" {
+					return "", "", fmt.Errorf("ambiguous tool name %q: found on servers %q and %q", toolKey, foundServer, mt.ServerName)
+				}
+				foundServer = mt.ServerName
+				foundName = t.Name
+			}
+		}
+	}
+	if foundServer == "" {
+		return "", "", fmt.Errorf("MCP tool %q not found among enabled tool lists", toolKey)
+	}
+	return foundServer, foundName, nil
+}
+
+// TestMcpToolCall connects to the configured MCP server and invokes tools/call once.
+func TestMcpToolCall(mcpServers string, mcpTools []*McpTools, toolKey string, arguments map[string]interface{}) (string, error) {
+	serverName, toolName, err := ResolveMcpToolTarget(mcpTools, toolKey)
+	if err != nil {
+		return "", err
+	}
+	toolsMap := map[string]bool{serverName: true}
+	clients, err := GetMCPClientMap(mcpServers, toolsMap)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		for _, c := range clients {
+			c.Close()
+		}
+	}()
+	cli, ok := clients[serverName]
+	if !ok {
+		return "", fmt.Errorf("MCP server %q is missing from mcpServers configuration or not enabled", serverName)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
+	defer cancel()
+	result, err := cli.CallTool(ctx, &protocol.CallToolRequest{Name: toolName, Arguments: arguments})
+	if err != nil {
+		return "", err
+	}
+	if result.IsError {
+		b, mErr := json.Marshal(result.Content)
+		if mErr != nil {
+			return "", fmt.Errorf("MCP tool returned error: %v", mErr)
+		}
+		return "", fmt.Errorf("MCP tool returned error: %s", string(b))
+	}
+	b, err := json.Marshal(result.Content)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

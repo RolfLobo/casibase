@@ -15,6 +15,7 @@
 package object
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -74,7 +75,7 @@ type Provider struct {
 	ContractMethod string `xorm:"varchar(100)" json:"contractMethod"`
 	Network        string `xorm:"varchar(100)" json:"network"`
 	Chain          string `xorm:"varchar(100)" json:"chain"`
-	TestContent    string `xorm:"varchar(100)" json:"testContent"`
+	TestContent    string `xorm:"varchar(500)" json:"testContent"`
 
 	// New fields for unified scan widget (for Scan category providers)
 	TargetMode    string `xorm:"varchar(100)" json:"targetMode"`    // "Manual Input" or "Asset"
@@ -655,6 +656,30 @@ func RefreshMcpTools(provider *Provider) error {
 
 	provider.McpTools = tools
 	return nil
+}
+
+// TestMcpProvider parses provider.testContent as {"tool":"...","arguments":{}} and invokes one MCP tools/call.
+func TestMcpProvider(p *Provider, lang string) (string, error) {
+	if p.Category != "Agent" || p.Type != "MCP" {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:provider is not an MCP agent provider"))
+	}
+	if strings.TrimSpace(p.Text) == "" {
+		return "", fmt.Errorf("MCP servers configuration (text) is empty")
+	}
+	var payload struct {
+		Tool      string                 `json:"tool"`
+		Arguments map[string]interface{} `json:"arguments"`
+	}
+	if err := json.Unmarshal([]byte(p.TestContent), &payload); err != nil {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:invalid MCP test JSON in testContent: %v"), err)
+	}
+	if strings.TrimSpace(payload.Tool) == "" {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:MCP test JSON must include non-empty \"tool\""))
+	}
+	if payload.Arguments == nil {
+		payload.Arguments = map[string]interface{}{}
+	}
+	return agent.TestMcpToolCall(p.Text, p.McpTools, payload.Tool, payload.Arguments)
 }
 
 func (p *Provider) processProviderParams(providerDb *Provider) {

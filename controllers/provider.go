@@ -214,3 +214,27 @@ func (c *ApiController) RefreshMcpTools() {
 
 	c.ResponseOk(&provider)
 }
+
+// TestMcpProvider
+// @Title TestMcpProvider
+// @Tag Provider API
+// @Description invoke a single MCP tool using provider configuration (Agent / MCP)
+// @Param body body object.Provider true "Provider with testContent JSON: {\"tool\":\"...\",\"arguments\":{}}"
+// @Success 200 {object} controllers.Response The Response object; data is the tool result JSON string
+// @router /test-mcp-provider [post]
+func (c *ApiController) TestMcpProvider() {
+	var provider object.Provider
+	err := json.Unmarshal(c.Ctx.Input.RequestBody, &provider)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	result, err := object.TestMcpProvider(&provider, c.GetAcceptLanguage())
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	c.ResponseOk(result)
+}
