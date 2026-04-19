@@ -256,20 +256,21 @@ export default function TaskAnalysisRadarChart({categories, radarMin = 0, radarM
               zIndex: 5,
               maxWidth: 280,
               padding: "8px 10px",
-              background: "rgba(0,0,0,0.82)",
-              color: "#fff",
+              background: "rgba(255, 255, 255, 0.96)",
+              color: "rgba(0, 0, 0, 0.85)",
               fontSize: 12,
               lineHeight: 1.45,
               borderRadius: 4,
               pointerEvents: "none",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+              border: "1px solid #e0e0e0",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
             }}
             role="tooltip"
           >
             <div
               style={{
                 fontSize: 11,
-                color: "rgba(255,255,255,0.75)",
+                color: "rgba(0, 0, 0, 0.45)",
                 marginBottom: 2,
                 wordBreak: "break-word",
               }}
