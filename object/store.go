@@ -126,7 +126,7 @@ func GetGlobalStores() ([]*Store, error) {
 
 func GetStores(owner string) ([]*Store, error) {
 	stores := []*Store{}
-	err := adapter.engine.Desc("created_time").Find(&stores, &Store{Owner: owner})
+	err := adapter.engine.Desc("created_time").Where("owner = ? OR owner = ?", owner, "admin").Find(&stores)
 	if err != nil {
 		return stores, err
 	}
@@ -497,7 +497,7 @@ func GetStoreCount(name, field, value string) (int64, error) {
 
 func GetStoreCountByOwner(owner, field, value string) (int64, error) {
 	session := GetDbSession("", -1, -1, field, value, "", "")
-	return session.Count(&Store{Owner: owner})
+	return session.Where("owner = ? OR owner = ?", owner, "admin").Count(&Store{})
 }
 
 func GetPaginationStores(offset, limit int, name, field, value, sortField, sortOrder string) ([]*Store, error) {
@@ -519,7 +519,7 @@ func GetPaginationStores(offset, limit int, name, field, value, sortField, sortO
 func GetPaginationStoresByOwner(owner string, offset, limit int, field, value, sortField, sortOrder string) ([]*Store, error) {
 	stores := []*Store{}
 	session := GetDbSession("", offset, limit, field, value, sortField, sortOrder)
-	err := session.Find(&stores, &Store{Owner: owner})
+	err := session.Where("owner = ? OR owner = ?", owner, "admin").Find(&stores)
 	if err != nil {
 		return stores, err
 	}
