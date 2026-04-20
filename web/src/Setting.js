@@ -161,6 +161,13 @@ export function showMessage(type, text) {
   }
 }
 
+export function isGlobalAdminUser(account) {
+  if (account === undefined || account === null) {
+    return false;
+  }
+  return account.name === "admin" && account.isAdmin === true;
+}
+
 export function isAdminUser(account) {
   if (account === undefined || account === null) {
     return false;

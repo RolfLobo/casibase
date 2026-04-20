@@ -997,7 +997,7 @@ class StoreEditPage extends React.Component {
           <Button size="large" onClick={() => this.submitStoreEdit(false, undefined)}>{i18next.t("general:Save")}</Button>
           <Button style={{marginLeft: "20px"}} type="primary" size="large" onClick={() => this.submitStoreEdit(true, undefined)}>{i18next.t("general:Save & Exit")}</Button>
           {this.state.isNewStore && <Button style={{marginLeft: "20px"}} size="large" onClick={() => this.cancelStoreEdit()}>{i18next.t("general:Cancel")}</Button>}
-          {this.state.store !== null && this.state.store.owner === "admin" && Setting.isChatAdminUser(this.props.account) && !Setting.isAdminUser(this.props.account) && (
+          {this.state.store !== null && this.state.store.owner === "admin" && Setting.isChatAdminUser(this.props.account) && !Setting.isGlobalAdminUser(this.props.account) && (
             <Button style={{marginLeft: "20px"}} size="large" onClick={() => this.claimStore()}>{i18next.t("store:Claim")}</Button>
           )}
         </div>
