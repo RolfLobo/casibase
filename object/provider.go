@@ -81,6 +81,7 @@ type Provider struct {
 	Network        string `xorm:"varchar(100)" json:"network"`
 	Chain          string `xorm:"varchar(100)" json:"chain"`
 	TestContent    string `xorm:"varchar(500)" json:"testContent"`
+	ModelProvider  string `xorm:"varchar(100)" json:"modelProvider"`
 
 	// New fields for unified scan widget (for Scan category providers)
 	TargetMode    string `xorm:"varchar(100)" json:"targetMode"`    // "Manual Input" or "Asset"

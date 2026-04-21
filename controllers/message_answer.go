@@ -92,8 +92,17 @@ func (c *ApiController) GetMessageAnswer() {
 		return
 	}
 	if store == nil {
-		c.ResponseErrorStream(message, fmt.Sprintf(c.T("account:The store: %s is not found"), chat.Store))
-		return
+		if chat.ToolProvider != "" || chat.ModelProvider != "" {
+			store = &object.Store{
+				Owner:          "admin",
+				ModelProvider:  chat.ModelProvider,
+				ToolProviders:  []string{chat.ToolProvider},
+				KnowledgeCount: 10,
+			}
+		} else {
+			c.ResponseErrorStream(message, fmt.Sprintf(c.T("account:The store: %s is not found"), chat.Store))
+			return
+		}
 	}
 
 	question := store.Welcome
@@ -400,6 +409,7 @@ func (c *ApiController) GetAnswer() {
 	question := c.Input().Get("question")
 	framework := c.Input().Get("framework")
 	video := c.Input().Get("video")
+	toolProvider := c.Input().Get("toolProvider")
 
 	if question == "" {
 		c.ResponseError(fmt.Sprintf("The question should not be empty"))
@@ -418,7 +428,14 @@ func (c *ApiController) GetAnswer() {
 		}
 	}
 
-	answer, modelResult, err := object.GetAnswer(provider, question, c.GetAcceptLanguage())
+	var answer string
+	var modelResult *model.ModelResult
+	var err error
+	if toolProvider != "" {
+		answer, modelResult, err = object.GetAnswerWithTool(provider, toolProvider, question, c.GetAcceptLanguage())
+	} else {
+		answer, modelResult, err = object.GetAnswer(provider, question, c.GetAcceptLanguage())
+	}
 	if err != nil {
 		c.ResponseError(err.Error())
 		return
@@ -463,7 +480,11 @@ func (c *ApiController) GetAnswer() {
 		}
 	}
 
-	answer, modelResult, err = object.GetAnswer(provider, question, c.GetAcceptLanguage())
+	if toolProvider != "" {
+		answer, modelResult, err = object.GetAnswerWithTool(provider, toolProvider, question, c.GetAcceptLanguage())
+	} else {
+		answer, modelResult, err = object.GetAnswer(provider, question, c.GetAcceptLanguage())
+	}
 	if err != nil {
 		c.ResponseError(err.Error())
 		return

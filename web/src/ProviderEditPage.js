@@ -1192,6 +1192,7 @@ class ProviderEditPage extends React.Component {
           provider={this.state.provider}
           originalProvider={this.state.originalProvider}
           onUpdateProvider={this.updateProviderField.bind(this)}
+          account={this.props.account}
         />
         <TestMcpWidget
           provider={this.state.provider}

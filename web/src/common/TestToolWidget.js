@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import React from "react";
-import {Button, Col, Row} from "antd";
+import {Button, Col, Row, Select} from "antd";
 import * as Setting from "../Setting";
 import i18next from "i18next";
 import * as ProviderBackend from "../backend/ProviderBackend";
 import {checkProvider} from "./ProviderWidget";
 import Editor from "./Editor";
+import ChatWidget from "./ChatWidget";
+
+const {Option} = Select;
 
 const DEFAULT_TOOL_CONTENT = {
   Time: JSON.stringify({tool: "TimeTool", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
@@ -47,18 +50,34 @@ class TestToolWidget extends React.Component {
     this.state = {
       testButtonLoading: false,
       testResult: "",
+      modelProviders: [],
     };
   }
 
   componentDidMount() {
     this.syncFromProvider(this.props.provider, null);
+    if (this.props.provider && this.props.provider.category === "Tool") {
+      this.loadModelProviders();
+    }
   }
 
   componentDidUpdate(prevProps) {
     const {provider} = this.props;
     if (provider !== prevProps.provider) {
       this.syncFromProvider(provider, prevProps.provider);
+      if (provider && provider.category === "Tool" && this.state.modelProviders.length === 0) {
+        this.loadModelProviders();
+      }
     }
+  }
+
+  loadModelProviders() {
+    ProviderBackend.getProviders("admin")
+      .then((res) => {
+        if (res.status === "ok") {
+          this.setState({modelProviders: res.data.filter(p => p.category === "Model")});
+        }
+      });
   }
 
   syncFromProvider(provider, prevProvider) {
@@ -112,7 +131,9 @@ class TestToolWidget extends React.Component {
   }
 
   render() {
-    const {provider, originalProvider, onUpdateProvider} = this.props;
+    const {provider, originalProvider, onUpdateProvider, account} = this.props;
+    const {modelProviders} = this.state;
+    const selectedModelProvider = provider.modelProvider || "";
 
     if (!provider || provider.category !== "Tool") {
       return null;
@@ -160,6 +181,63 @@ class TestToolWidget extends React.Component {
             </Col>
           </Row>
         ) : null}
+        <Row style={{marginTop: "20px"}}>
+          <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+            {Setting.getLabel(i18next.t("provider:Chat test"), i18next.t("provider:Chat test - Tooltip"))} :
+          </Col>
+          <Col span={20}>
+            <Row style={{marginBottom: "10px"}}>
+              <Col span={24}>
+                <Select
+                  style={{width: "100%"}}
+                  placeholder={i18next.t("provider:Select model provider")}
+                  value={selectedModelProvider || undefined}
+                  onChange={(value) => onUpdateProvider("modelProvider", value)}
+                  showSearch
+                  filterOption={(input, option) =>
+                    option.children[1].toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {modelProviders.map((mp, index) => (
+                    <Option key={index} value={mp.name}>
+                      <img width={20} height={20} style={{marginBottom: "3px", marginRight: "10px"}}
+                        src={Setting.getProviderLogoURL({category: mp.category, type: mp.type})}
+                        alt={mp.name} />
+                      {mp.displayName || mp.name}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+            </Row>
+            {selectedModelProvider ? (
+              <ChatWidget
+                key={`${provider.name}-${selectedModelProvider}`}
+                chatName={`chat_tool_${provider.name}`}
+                displayName={`${provider.displayName || provider.name} - Chat Test`}
+                category="ToolTest"
+                modelProvider={selectedModelProvider}
+                toolProvider={provider.name}
+                account={account}
+                height="600px"
+                showHeader={true}
+                showNewChatButton={true}
+              />
+            ) : (
+              <div style={{
+                width: "100%",
+                height: "100px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "1px solid #d9d9d9",
+                borderRadius: "6px",
+                color: "#999",
+              }}>
+                {i18next.t("provider:Please select a model provider first")}
+              </div>
+            )}
+          </Col>
+        </Row>
       </React.Fragment>
     );
   }

@@ -166,17 +166,23 @@ class ChatWidget extends React.Component {
       .then((res) => {
         if (res.status === "ok" && res.data) {
           const chat = res.data;
-          // Ensure the chat has a modelProvider set
-          if (!chat.modelProvider && this.state.modelProviders.length > 0) {
-            chat.modelProvider = this.state.modelProviders[0].name;
-            // Update the chat in backend
-            ChatBackend.updateChat(chat.owner, chat.name, chat).catch(() => {
-              // Ignore update errors for modelProvider
-            });
+          let needsUpdate = false;
+          // Sync modelProvider from props (or default) if different
+          const desiredModel = this.props.modelProvider ||
+            (this.state.modelProviders.length > 0 ? this.state.modelProviders[0].name : "");
+          if (desiredModel && chat.modelProvider !== desiredModel) {
+            chat.modelProvider = desiredModel;
+            needsUpdate = true;
           }
-          this.setState({
-            currentChat: chat,
-          });
+          // Ensure the toolProvider is in sync with props
+          if (this.props.toolProvider && chat.toolProvider !== this.props.toolProvider) {
+            chat.toolProvider = this.props.toolProvider;
+            needsUpdate = true;
+          }
+          if (needsUpdate) {
+            ChatBackend.updateChat(chat.owner, chat.name, chat).catch(() => {});
+          }
+          this.setState({currentChat: chat});
           this.getMessages(chat);
         } else {
           this.newChat();
@@ -212,6 +218,7 @@ class ChatWidget extends React.Component {
       messageCount: 0,
       needTitle: true,
       modelProvider: currentModelProvider,
+      toolProvider: this.props.toolProvider || "",
     };
 
     ChatBackend.addChat(newChat)
@@ -417,6 +424,8 @@ class ChatWidget extends React.Component {
     let text = "";
     let reasonText = "";
     const toolCalls = [];
+    let searchResults = null;
+    let vectorScores = null;
     this.setState({
       messageLoading: true,
     });
@@ -450,25 +459,25 @@ class ChatWidget extends React.Component {
 
         lastMessage2.text = parsedResult.finalAnswer;
 
-        if (messages[messages.length - 1].reasonText) {
-          lastMessage2.reasonText = messages[messages.length - 1].reasonText;
-          lastMessage2.reasonHtml = messages[messages.length - 1].reasonHtml;
+        if (reasonText) {
+          lastMessage2.reasonText = reasonText;
+          lastMessage2.reasonHtml = renderReason(reasonText);
         }
-
-        if (messages[messages.length - 1].toolCalls) {
-          lastMessage2.toolCalls = messages[messages.length - 1].toolCalls;
+        if (toolCalls.length > 0) {
+          lastMessage2.toolCalls = [...toolCalls];
+        }
+        if (searchResults) {
+          lastMessage2.searchResults = searchResults;
+        }
+        if (vectorScores) {
+          lastMessage2.vectorScores = vectorScores;
         }
 
         const updatedMessages = [...messages];
         updatedMessages[updatedMessages.length - 1] = lastMessage2;
 
-        updatedMessages.map((message, index) => {
-          if (index === updatedMessages.length - 1 && message.author === "AI") {
-            message.html = renderText(message.text);
-          } else {
-            message.html = renderText(message.text);
-          }
-          return message;
+        updatedMessages.forEach((message) => {
+          message.html = renderText(message.text);
         });
 
         this.setState({
@@ -529,11 +538,13 @@ class ChatWidget extends React.Component {
         if (!chat || (this.state.currentChat?.name !== chat.name)) {
           return;
         }
-        // data is already a JSON string from backend, parse it to get the array
-        const searchResults = JSON.parse(data);
+        searchResults = JSON.parse(data);
 
         const lastMessage2 = Setting.deepCopy(lastMessage);
         lastMessage2.searchResults = searchResults;
+        if (toolCalls.length > 0) {
+          lastMessage2.toolCalls = [...toolCalls];
+        }
 
         const updatedMessages = [...messages];
         updatedMessages[updatedMessages.length - 1] = lastMessage2;
@@ -547,10 +558,13 @@ class ChatWidget extends React.Component {
         if (!chat || (this.state.currentChat?.name !== chat.name)) {
           return;
         }
-        const vectorScores = JSON.parse(data);
+        vectorScores = JSON.parse(data);
 
         const lastMessage2 = Setting.deepCopy(lastMessage);
         lastMessage2.vectorScores = vectorScores;
+        if (toolCalls.length > 0) {
+          lastMessage2.toolCalls = [...toolCalls];
+        }
 
         const updatedMessages = [...messages];
         updatedMessages[updatedMessages.length - 1] = lastMessage2;
@@ -586,29 +600,21 @@ class ChatWidget extends React.Component {
 
         const lastMessage2 = Setting.deepCopy(lastMessage);
         lastMessage2.text = text;
-
-        // Keep the reason text if it exists
-        if (messages[messages.length - 1].reasonText) {
-          lastMessage2.reasonText = messages[messages.length - 1].reasonText;
-          lastMessage2.reasonHtml = messages[messages.length - 1].reasonHtml;
-        }
-
-        // Keep the tool calls if they exist
-        if (messages[messages.length - 1].toolCalls) {
-          lastMessage2.toolCalls = messages[messages.length - 1].toolCalls;
-        }
-
-        // Keep the search results if they exist
-        if (messages[messages.length - 1].searchResults) {
-          lastMessage2.searchResults = messages[messages.length - 1].searchResults;
-        }
-
-        // Keep the vector scores if they exist
-        if (messages[messages.length - 1].vectorScores) {
-          lastMessage2.vectorScores = messages[messages.length - 1].vectorScores;
-        }
-
         lastMessage2.isReasoningPhase = false;
+
+        if (reasonText) {
+          lastMessage2.reasonText = reasonText;
+          lastMessage2.reasonHtml = renderReason(reasonText);
+        }
+        if (toolCalls.length > 0) {
+          lastMessage2.toolCalls = [...toolCalls];
+        }
+        if (searchResults) {
+          lastMessage2.searchResults = searchResults;
+        }
+        if (vectorScores) {
+          lastMessage2.vectorScores = vectorScores;
+        }
 
         // Parse the final answer and suggestions
         const parsedResult = messageCarrier.parseAnswerWithCarriers(text);
