@@ -20,23 +20,27 @@ import * as ProviderBackend from "../backend/ProviderBackend";
 import {checkProvider} from "./ProviderWidget";
 import Editor from "./Editor";
 
-function buildDefaultMcpTestJson(provider) {
-  if (provider.mcpTools && provider.mcpTools.length > 0) {
-    const mt = provider.mcpTools.find(t => t.isEnabled !== false) || provider.mcpTools[0];
-    try {
-      const tools = JSON.parse(mt.tools || "[]");
-      if (tools.length > 0 && tools[0].name) {
-        const toolId = `${mt.serverName}__${tools[0].name}`;
-        return JSON.stringify({tool: toolId, arguments: {}}, null, 2);
-      }
-    } catch (e) {
-      // ignore parse errors, fall through
-    }
+const DEFAULT_TOOL_CONTENT = {
+  Time: JSON.stringify({tool: "TimeTool", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
+};
+
+function isValidToolTestJson(content) {
+  try {
+    const parsed = JSON.parse(content);
+    return parsed && typeof parsed.tool === "string" && parsed.tool.trim() !== "";
+  } catch (e) {
+    return false;
   }
-  return "{\n  \"tool\": \"serverName__toolName\",\n  \"arguments\": {}\n}";
 }
 
-class TestMcpWidget extends React.Component {
+function buildDefaultToolTestJson(provider) {
+  if (DEFAULT_TOOL_CONTENT[provider.type]) {
+    return DEFAULT_TOOL_CONTENT[provider.type];
+  }
+  return JSON.stringify({tool: "", arguments: {}}, null, 2);
+}
+
+class TestToolWidget extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -58,14 +62,14 @@ class TestMcpWidget extends React.Component {
 
   syncFromProvider(provider, prevProvider) {
     const {onUpdateProvider} = this.props;
-    if (!provider || provider.category !== "Agent" || provider.type !== "MCP") {
+    if (!provider || provider.category !== "Tool") {
       return;
     }
-    if (!provider.testContent || provider.testContent.trim() === "") {
-      const def = buildDefaultMcpTestJson(provider);
-      if (onUpdateProvider) {
-        onUpdateProvider("testContent", def);
-      }
+    const needsDefault = !provider.testContent ||
+      provider.testContent.trim() === "" ||
+      !isValidToolTestJson(provider.testContent);
+    if (needsDefault && onUpdateProvider) {
+      onUpdateProvider("testContent", buildDefaultToolTestJson(provider));
     }
     const prevSummary = prevProvider ? prevProvider.resultSummary : null;
     if (provider.resultSummary && provider.resultSummary !== prevSummary) {
@@ -73,16 +77,16 @@ class TestMcpWidget extends React.Component {
     }
   }
 
-  async sendTestMcp(provider, originalProvider) {
+  async sendTestTool(provider, originalProvider) {
     let parsed;
     try {
       parsed = JSON.parse(provider.testContent);
     } catch (e) {
-      Setting.showMessage("error", `${i18next.t("provider:Invalid MCP test JSON")}: ${e.message}`);
+      Setting.showMessage("error", `${i18next.t("provider:Invalid tool test JSON")}: ${e.message}`);
       return;
     }
     if (!parsed || typeof parsed.tool !== "string" || parsed.tool.trim() === "") {
-      Setting.showMessage("error", i18next.t("provider:MCP test JSON must include tool"));
+      Setting.showMessage("error", i18next.t("provider:Tool test JSON must include tool"));
       return;
     }
 
@@ -90,7 +94,7 @@ class TestMcpWidget extends React.Component {
     this.setState({testButtonLoading: true, testResult: ""});
 
     try {
-      const res = await ProviderBackend.testMcpProvider(provider);
+      const res = await ProviderBackend.testToolProvider(provider);
       if (res.status === "ok") {
         const out = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
         this.setState({testResult: out});
@@ -109,7 +113,7 @@ class TestMcpWidget extends React.Component {
   render() {
     const {provider, originalProvider, onUpdateProvider} = this.props;
 
-    if (!provider || provider.category !== "Agent" || provider.type !== "MCP") {
+    if (!provider || provider.category !== "Tool") {
       return null;
     }
 
@@ -117,7 +121,7 @@ class TestMcpWidget extends React.Component {
       <React.Fragment>
         <Row style={{marginTop: "20px"}} >
           <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
-            {Setting.getLabel(i18next.t("provider:Provider test"), i18next.t("provider:MCP test JSON - Tooltip"))} :
+            {Setting.getLabel(i18next.t("provider:Provider test"), i18next.t("provider:Tool test JSON - Tooltip"))} :
           </Col>
           <Col span={10} >
             <Editor
@@ -134,9 +138,9 @@ class TestMcpWidget extends React.Component {
               type="primary"
               loading={this.state.testButtonLoading}
               disabled={!provider.testContent || provider.testContent.trim() === ""}
-              onClick={() => this.sendTestMcp(provider, originalProvider)}
+              onClick={() => this.sendTestTool(provider, originalProvider)}
             >
-              {i18next.t("provider:Invoke MCP tool")}
+              {i18next.t("provider:Invoke tool")}
             </Button>
           </Col>
         </Row>
@@ -144,7 +148,7 @@ class TestMcpWidget extends React.Component {
           <Row style={{marginTop: "10px"}}>
             <Col span={2}></Col>
             <Col span={10}>
-              <div style={{marginBottom: "5px"}}><strong>{i18next.t("provider:MCP tool result")}:</strong></div>
+              <div style={{marginBottom: "5px"}}><strong>{i18next.t("provider:Tool result")}:</strong></div>
               <Editor
                 value={this.state.testResult}
                 lang="text"
@@ -160,4 +164,4 @@ class TestMcpWidget extends React.Component {
   }
 }
 
-export default TestMcpWidget;
+export default TestToolWidget;

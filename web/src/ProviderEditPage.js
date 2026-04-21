@@ -26,6 +26,7 @@ import TtsTestWidget from "./common/TestTtsWidget";
 import EmbedTestWidget from "./common/TestEmbedWidget";
 import TestMcpWidget from "./common/TestMcpWidget";
 import TestScanWidget from "./common/TestScanWidget";
+import TestToolWidget from "./common/TestToolWidget";
 import Editor from "./common/Editor";
 
 const {Option} = Select;
@@ -1183,6 +1184,11 @@ class ProviderEditPage extends React.Component {
           provider={this.state.provider}
           originalProvider={this.state.originalProvider}
           account={this.props.account}
+          onUpdateProvider={this.updateProviderField.bind(this)}
+        />
+        <TestToolWidget
+          provider={this.state.provider}
+          originalProvider={this.state.originalProvider}
           onUpdateProvider={this.updateProviderField.bind(this)}
         />
         <TestMcpWidget

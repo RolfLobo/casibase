@@ -15,10 +15,12 @@
 package object
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 	"github.com/casibase/casibase/agent"
 	"github.com/casibase/casibase/chat"
@@ -28,6 +30,7 @@ import (
 	"github.com/casibase/casibase/scan"
 	"github.com/casibase/casibase/storage"
 	"github.com/casibase/casibase/stt"
+	"github.com/casibase/casibase/tool"
 	"github.com/casibase/casibase/tts"
 	"github.com/casibase/casibase/util"
 	"xorm.io/core"
@@ -698,6 +701,62 @@ func TestMcpProvider(p *Provider, lang string) (string, error) {
 		payload.Arguments = map[string]interface{}{}
 	}
 	return agent.TestMcpToolCall(p.Text, p.McpTools, payload.Tool, payload.Arguments)
+}
+
+// TestToolProvider parses provider.testContent as {"tool":"...","arguments":{}} and invokes one builtin tool.
+func TestToolProvider(p *Provider, lang string) (string, error) {
+	if p.Category != "Tool" {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:provider is not a Tool provider"))
+	}
+
+	var payload struct {
+		Tool      string                 `json:"tool"`
+		Arguments map[string]interface{} `json:"arguments"`
+	}
+	if err := json.Unmarshal([]byte(p.TestContent), &payload); err != nil {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:invalid tool test JSON in testContent: %v"), err)
+	}
+	if strings.TrimSpace(payload.Tool) == "" {
+		return "", fmt.Errorf(i18n.Translate(lang, "object:tool test JSON must include non-empty \"tool\""))
+	}
+	if payload.Arguments == nil {
+		payload.Arguments = map[string]interface{}{}
+	}
+
+	tp, err := tool.NewProvider(p.Category, p.Type, lang)
+	if err != nil {
+		return "", err
+	}
+
+	var foundTool interface {
+		Execute(ctx context.Context, arguments map[string]interface{}) (*protocol.CallToolResult, error)
+	}
+	for _, t := range tp.BuiltinTools() {
+		if t.GetName() == payload.Tool {
+			foundTool = t
+			break
+		}
+	}
+	if foundTool == nil {
+		return "", fmt.Errorf("tool not found: %s", payload.Tool)
+	}
+
+	result, err := foundTool.Execute(context.Background(), payload.Arguments)
+	if err != nil {
+		return "", err
+	}
+
+	var texts []string
+	for _, c := range result.Content {
+		if tc, ok := c.(*protocol.TextContent); ok {
+			texts = append(texts, tc.Text)
+		}
+	}
+	output := strings.Join(texts, "\n")
+	if result.IsError {
+		return "", fmt.Errorf("%s", output)
+	}
+	return output, nil
 }
 
 func (p *Provider) processProviderParams(providerDb *Provider) {
