@@ -104,6 +104,7 @@ func QueryTextWithTools(p ModelProvider, question string, writer io.Writer, hist
 	}
 
 	if agentInfo.AgentMessages.ToolCalls == nil {
+		fmt.Printf("Tool Call: [None]\n")
 		return modelResult, nil
 	}
 
@@ -175,6 +176,9 @@ func callTools(toolCall openai.ToolCall, serverName, toolName string, agentClien
 		return nil, fmt.Errorf(i18n.Translate(lang, "model:failed to parse tool arguments: %v"), err)
 	}
 
+	fmt.Printf("Tool Call: [%s]\n", toolCall.Function.Name)
+	fmt.Printf("Arguments: [%s]\n", toolCall.Function.Arguments)
+
 	var result *protocol.CallToolResult
 	var err error
 
@@ -233,6 +237,8 @@ func callTools(toolCall openai.ToolCall, serverName, toolName string, agentClien
 	} else {
 		contentStr = response.Data.(string)
 	}
+
+	fmt.Printf("Tool Result: [%s]\n", contentStr)
 
 	toolData := ToolCall{
 		Name:      toolCall.Function.Name,

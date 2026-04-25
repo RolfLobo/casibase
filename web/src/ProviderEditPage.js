@@ -546,6 +546,8 @@ class ProviderEditPage extends React.Component {
                   this.updateProviderField("subType", "DuckDuckGo");
                 } else if (value === "Shell") {
                   this.updateProviderField("subType", "Default");
+                } else if (value === "Office") {
+                  this.updateProviderField("subType", "All");
                 }
               } else if (this.state.provider.category === "Text-to-Speech") {
                 if (value === "Alibaba Cloud") {
