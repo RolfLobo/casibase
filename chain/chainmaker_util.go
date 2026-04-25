@@ -17,6 +17,7 @@ package chain
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -40,7 +41,7 @@ func SendChainmakerRequest(info *ChainChainmakerClient, method string, lang stri
 
 	serverUrl := info.ChainConfig.ChainmakerEndpoint
 	if serverUrl == "" {
-		return nil, fmt.Errorf(i18n.Translate(lang, "chain:chainmakerEndpoint is not configured"))
+		return nil, errors.New(i18n.Translate(lang, "chain:chainmakerEndpoint is not configured"))
 	}
 
 	if !strings.HasPrefix(serverUrl, "http://") && !strings.HasPrefix(serverUrl, "https://") {

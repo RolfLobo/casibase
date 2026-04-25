@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -59,16 +60,12 @@ func (p *JinaEmbeddingProvider) calculatePrice(res *EmbeddingResult) error {
 
 func (p *JinaEmbeddingProvider) QueryVector(text string, ctx context.Context, lang string) ([]float32, *EmbeddingResult, error) {
 	if text == "" {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:text cannot be empty"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:text cannot be empty"))
 	}
 
 	url := "https://api.jina.ai/v1/embeddings"
 	token := p.apiKey
 	model := p.subType
-
-	if text == "" {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:text can not be empty."))
-	}
 
 	payload := map[string]interface{}{
 		"model":          model,
