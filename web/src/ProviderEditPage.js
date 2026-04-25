@@ -550,6 +550,8 @@ class ProviderEditPage extends React.Component {
                   this.updateProviderField("subType", "All");
                 } else if (value === "Web Fetch") {
                   this.updateProviderField("subType", "Default");
+                } else if (value === "Web Browser") {
+                  this.updateProviderField("subType", "Default");
                 }
               } else if (this.state.provider.category === "Text-to-Speech") {
                 if (value === "Alibaba Cloud") {

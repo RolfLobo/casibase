@@ -1076,6 +1076,10 @@ export function getOtherProviderInfo() {
         logo: `${StaticBaseUrl}/img/social_mcp.png`,
         url: "https://github.com/casibase/casibase",
       },
+      "Web Browser": {
+        logo: `${StaticBaseUrl}/img/social_mcp.png`,
+        url: "https://github.com/casibase/casibase",
+      },
     },
     "Public Cloud": {
       "Aliyun": {
@@ -1397,6 +1401,7 @@ export function getProviderTypeOptions(category) {
       {id: "Shell", name: "Shell"},
       {id: "Office", name: "Office"},
       {id: "Web Fetch", name: "Web Fetch"},
+      {id: "Web Browser", name: "Web Browser"},
     ];
   } else if (category === "Public Cloud") {
     return ([
@@ -2164,6 +2169,10 @@ export function getProviderSubTypeOptions(category, type) {
         {id: "PowerPoint Write", name: "PowerPoint Write"},
       ];
     } else if (type === "Web Fetch") {
+      return [
+        {id: "Default", name: "Default"},
+      ];
+    } else if (type === "Web Browser") {
       return [
         {id: "Default", name: "Default"},
       ];
