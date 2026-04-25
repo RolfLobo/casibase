@@ -45,7 +45,7 @@ func NewProvider(config ProviderConfig, lang string) (Provider, error) {
 	switch config.Type {
 	case "Time":
 		return &TimeProvider{}, nil
-	case "WebSearch":
+	case "Web Search":
 		return NewWebSearchProvider(config)
 	case "Shell":
 		return &ShellProvider{}, nil

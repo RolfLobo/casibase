@@ -1060,7 +1060,7 @@ export function getOtherProviderInfo() {
         logo: `${StaticBaseUrl}/img/social_mcp.png`,
         url: "https://github.com/casibase/casibase",
       },
-      "WebSearch": {
+      "Web Search": {
         logo: `${StaticBaseUrl}/img/social_mcp.png`,
         url: "https://github.com/casibase/casibase",
       },
@@ -1393,7 +1393,7 @@ export function getProviderTypeOptions(category) {
   } else if (category === "Tool") {
     return [
       {id: "Time", name: "Time"},
-      {id: "WebSearch", name: "WebSearch"},
+      {id: "Web Search", name: "Web Search"},
       {id: "Shell", name: "Shell"},
       {id: "Office", name: "Office"},
       {id: "Web Fetch", name: "Web Fetch"},
@@ -2141,7 +2141,7 @@ export function getProviderSubTypeOptions(category, type) {
       return [
         {id: "Default", name: "Default"},
       ];
-    } else if (type === "WebSearch") {
+    } else if (type === "Web Search") {
       return [
         {id: "DuckDuckGo", name: "DuckDuckGo"},
         {id: "Bing", name: "Bing"},

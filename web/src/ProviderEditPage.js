@@ -183,11 +183,11 @@ class ProviderEditPage extends React.Component {
   }
 
   isGoogleWebSearchProvider(provider) {
-    return provider.category === "Tool" && provider.type === "WebSearch" && provider.subType === "Google";
+    return provider.category === "Tool" && provider.type === "Web Search" && provider.subType === "Google";
   }
 
   isWebSearchApiKeyProvider(provider) {
-    return provider.category === "Tool" && provider.type === "WebSearch" && ["Google", "Baidu"].includes(provider.subType);
+    return provider.category === "Tool" && provider.type === "Web Search" && ["Google", "Baidu"].includes(provider.subType);
   }
 
   shouldShowClientIdInput(provider) {
@@ -542,7 +542,7 @@ class ProviderEditPage extends React.Component {
               } else if (this.state.provider.category === "Tool") {
                 if (value === "Time") {
                   this.updateProviderField("subType", "Default");
-                } else if (value === "WebSearch") {
+                } else if (value === "Web Search") {
                   this.updateProviderField("subType", "DuckDuckGo");
                 } else if (value === "Shell") {
                   this.updateProviderField("subType", "Default");
@@ -1355,7 +1355,7 @@ class ProviderEditPage extends React.Component {
           ) : null
         }
         {
-          this.state.provider.category === "Tool" && this.state.provider.type === "WebSearch" ? (
+          this.state.provider.category === "Tool" && this.state.provider.type === "Web Search" ? (
             <Row style={{marginTop: "20px"}} >
               <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
                 {Setting.getLabel(i18next.t("provider:Enable proxy"), i18next.t("provider:Enable proxy - Tooltip"))} :
