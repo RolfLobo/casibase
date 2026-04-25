@@ -121,7 +121,7 @@ require (
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.3 // indirect
-	golang.org/x/image v0.27.0 // indirect
+	golang.org/x/image v0.36.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 )
@@ -152,6 +152,7 @@ require (
 	github.com/baidubce/bce-sdk-go v0.9.164 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/buger/goterm v1.0.4 // indirect
+	github.com/casibase/goppt v1.0.0
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
@@ -301,3 +302,5 @@ require (
 replace github.com/sashabaranov/go-openai => github.com/casibase/go-openai v1.39.0
 
 replace google.golang.org/api v0.153.0 => google.golang.org/api v0.150.0
+
+replace github.com/casibase/goppt => ../goppt
