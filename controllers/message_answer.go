@@ -106,6 +106,9 @@ func (c *ApiController) GetMessageAnswer() {
 
 	if chat.ToolProvider != "" {
 		store.ToolProviders = []string{chat.ToolProvider}
+	}
+
+	if len(store.ToolProviders) > 0 {
 		store.Prompt += "\nYou are a helpful AI assistant with access to tools. When the user asks you to perform a task, you MUST use the available tools to complete it directly. Do not refuse or explain why you cannot — just use the tools and fulfill the request."
 	}
 
