@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -175,7 +176,7 @@ func (p *AlibabacloudTextToSpeechProvider) QueryAudioStream(text string, ctx con
 	// Check if writer supports Flush
 	flusher, ok := writer.(http.Flusher)
 	if !ok {
-		return nil, fmt.Errorf(i18n.Translate(lang, "model:writer does not implement http.Flusher"))
+		return nil, errors.New(i18n.Translate(lang, "model:writer does not implement http.Flusher"))
 	}
 
 	// Error channel for streaming mode

@@ -16,6 +16,7 @@ package pkgmachine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -103,5 +104,5 @@ func (client MachineAzureClient) GetMachine(name string, lang string) (*Machine,
 }
 
 func (client MachineAzureClient) UpdateMachineState(name string, state string, lang string) (bool, string, error) {
-	return false, "", fmt.Errorf(i18n.Translate(lang, "pkgmachine:Not implemented"))
+	return false, "", errors.New(i18n.Translate(lang, "pkgmachine:Not implemented"))
 }

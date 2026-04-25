@@ -15,7 +15,7 @@
 package txt
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/carmel/gooxml/document"
@@ -48,7 +48,7 @@ func GetTextFromDocx(path string, lang string) (string, error) {
 	}
 
 	if len(paragraphs) == 0 {
-		return "", fmt.Errorf(i18n.Translate(lang, "txt:.docx file is empty"))
+		return "", errors.New(i18n.Translate(lang, "txt:.docx file is empty"))
 	}
 
 	text := strings.Join(paragraphs, "")

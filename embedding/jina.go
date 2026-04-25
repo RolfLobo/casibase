@@ -119,7 +119,7 @@ func (p *JinaEmbeddingProvider) QueryVector(text string, ctx context.Context, la
 	}
 
 	if len(apiResponse.Data) == 0 {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:no embeddings found in the response"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:no embeddings found in the response"))
 	}
 	embedding := apiResponse.Data[0].Embedding
 

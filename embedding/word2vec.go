@@ -18,6 +18,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -93,7 +94,7 @@ func (p *Word2VecEmbeddingProvider) GetPricing() string {
 func (p *Word2VecEmbeddingProvider) QueryVector(text string, ctx context.Context, lang string) ([]float32, *EmbeddingResult, error) {
 	tokens := strings.Fields(text) // Split words by spaces
 	if len(tokens) == 0 {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:input text is empty"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:input text is empty"))
 	}
 
 	vectors := make([][]float32, 0, len(tokens))
@@ -107,7 +108,7 @@ func (p *Word2VecEmbeddingProvider) QueryVector(text string, ctx context.Context
 	}
 
 	if foundCount == 0 {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:none of the tokens were found in the vocabulary"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:none of the tokens were found in the vocabulary"))
 	}
 
 	// Calculate the average vector

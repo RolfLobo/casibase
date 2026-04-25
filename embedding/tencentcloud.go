@@ -16,6 +16,7 @@ package embedding
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/casibase/casibase/i18n"
@@ -71,7 +72,7 @@ func (p *TencentCloudEmbeddingProvider) QueryVector(text string, ctx context.Con
 	}
 
 	if len(response.Response.Data) == 0 {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:no embedding vector found in response"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:no embedding vector found in response"))
 	}
 
 	vector := make([]float32, len(response.Response.Data[0].Embedding))

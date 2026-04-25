@@ -17,6 +17,7 @@ package pkgmachine
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -161,5 +162,5 @@ func (client MachineVmwareClient) GetMachine(name string, lang string) (*Machine
 }
 
 func (client MachineVmwareClient) UpdateMachineState(name string, state string, lang string) (bool, string, error) {
-	return false, "", fmt.Errorf(i18n.Translate(lang, "pkgmachine:Not implemented"))
+	return false, "", errors.New(i18n.Translate(lang, "pkgmachine:Not implemented"))
 }

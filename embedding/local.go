@@ -17,6 +17,7 @@ package embedding
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -113,7 +114,7 @@ func (p *LocalEmbeddingProvider) QueryVector(text string, ctx context.Context, l
 	if model == "custom-embedding" && p.compatibleProvider != "" {
 		model = p.compatibleProvider
 	} else if model == "custom-embedding" && p.compatibleProvider == "" {
-		return nil, nil, fmt.Errorf(i18n.Translate(lang, "embedding:no embedding provider specified"))
+		return nil, nil, errors.New(i18n.Translate(lang, "embedding:no embedding provider specified"))
 	}
 
 	resp, err := client.CreateEmbeddings(ctx, openai.EmbeddingRequest{
