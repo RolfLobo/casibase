@@ -15,9 +15,34 @@
 package tool
 
 import (
+	"os"
+	"path/filepath"
+
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/casibase/casibase/agent/builtin_tool"
 )
+
+// resolveOutputPath returns path unchanged if it is absolute.
+// For relative paths it resolves them against the current user's Documents
+// folder so that files created by the AI land in a predictable, user-visible
+// location rather than in the server's working directory.
+//
+// Resolution order:
+//  1. XDG_DOCUMENTS_DIR environment variable (Linux / freedesktop standard)
+//  2. ~/Documents as a cross-platform fallback (Windows, macOS, Linux)
+func resolveOutputPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	if xdgDocs := os.Getenv("XDG_DOCUMENTS_DIR"); xdgDocs != "" {
+		return filepath.Join(xdgDocs, path)
+	}
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return path
+	}
+	return filepath.Join(homeDir, "Documents", path)
+}
 
 // officeSubType enumerates the allowed SubType values for OfficeProvider.
 type officeSubType string

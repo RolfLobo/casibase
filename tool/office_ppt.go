@@ -71,7 +71,7 @@ func (t *pptxWriteBuiltin) GetName() string { return "pptx_write" }
 
 func (t *pptxWriteBuiltin) GetDescription() string {
 	return `Create a PowerPoint (.pptx) file from an array of slide content strings.
-- path (required): output path for the .pptx file.
+- path (required): output path for the .pptx file. Absolute paths are used as-is. Relative paths or bare filenames are resolved inside the current user's Documents folder.
 - slides (required): JSON array of slide content strings, one element per slide.
   For each slide the first line becomes the title; remaining lines become the body text.
 Creates the file if it does not exist; overwrites otherwise.`
@@ -115,12 +115,13 @@ func (t *pptxWriteBuiltin) Execute(_ context.Context, arguments map[string]inter
 		slideTexts = append(slideTexts, s)
 	}
 
+	resolvedPath := resolveOutputPath(path)
 	if err := writePptxFile(path, slideTexts); err != nil {
 		return officeToolError(fmt.Sprintf("Failed to write PowerPoint file: %s", err.Error())), nil
 	}
 	return officeToolText(fmt.Sprintf(
 		"Successfully wrote PowerPoint file: %s\n%d slide(s) written",
-		path, len(slideTexts),
+		resolvedPath, len(slideTexts),
 	)), nil
 }
 
@@ -259,6 +260,7 @@ const (
 // writePptxFile creates a .pptx from a slice of slide text strings.
 // Each string: first line → title text box; remaining lines → body text box.
 func writePptxFile(path string, slideTexts []string) error {
+	path = resolveOutputPath(path)
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory %q: %w", dir, err)

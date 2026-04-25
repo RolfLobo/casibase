@@ -73,7 +73,7 @@ func (t *wordWriteBuiltin) GetName() string { return "word_write" }
 
 func (t *wordWriteBuiltin) GetDescription() string {
 	return `Write text content to a Word (.docx) file. Creates a new file; overwrites if it already exists.
-- path (required): absolute or relative output path for the .docx file.
+- path (required): output path for the .docx file. Absolute paths are used as-is. Relative paths or bare filenames are resolved inside the current user's Documents folder.
 - content (required): text to write. Each newline becomes a new paragraph.`
 }
 
@@ -104,10 +104,11 @@ func (t *wordWriteBuiltin) Execute(_ context.Context, arguments map[string]inter
 		return officeToolError("Missing required parameter: content"), nil
 	}
 
+	resolvedPath := resolveOutputPath(path)
 	if err := writeWordFile(path, content); err != nil {
 		return officeToolError(fmt.Sprintf("Failed to write Word file: %s", err.Error())), nil
 	}
-	return officeToolText(fmt.Sprintf("Successfully wrote Word file: %s", path)), nil
+	return officeToolText(fmt.Sprintf("Successfully wrote Word file: %s", resolvedPath)), nil
 }
 
 // ── gooxml helpers ────────────────────────────────────────────────────────────
@@ -130,6 +131,7 @@ func readWordFile(path string) (string, error) {
 }
 
 func writeWordFile(path string, content string) error {
+	path = resolveOutputPath(path)
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create directory %q: %w", dir, err)
