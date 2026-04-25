@@ -23,6 +23,7 @@ import (
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/casibase/casibase/agent/builtin_tool"
+	"github.com/casibase/casibase/proxy"
 	"github.com/chromedp/chromedp"
 	"golang.org/x/net/html"
 )
@@ -34,32 +35,44 @@ const (
 )
 
 // BrowserProvider is the Tool provider Type "Web Browser".
-type BrowserProvider struct{}
+type BrowserProvider struct {
+	enableProxy bool
+}
+
+func NewBrowserProvider(config ProviderConfig) (*BrowserProvider, error) {
+	return &BrowserProvider{enableProxy: config.EnableProxy}, nil
+}
 
 func (p *BrowserProvider) BuiltinTools() []builtin_tool.BuiltinTool {
 	return []builtin_tool.BuiltinTool{
-		&browserNavigateBuiltin{},
-		&browserScreenshotBuiltin{},
-		&browserEvaluateBuiltin{},
-		&browserClickBuiltin{},
+		&browserNavigateBuiltin{enableProxy: p.enableProxy},
+		&browserScreenshotBuiltin{enableProxy: p.enableProxy},
+		&browserEvaluateBuiltin{enableProxy: p.enableProxy},
+		&browserClickBuiltin{enableProxy: p.enableProxy},
 	}
 }
 
 // newBrowserCtx creates an allocator + browser context with the given timeout.
-func newBrowserCtx(parent context.Context, timeoutSecs float64) (context.Context, context.CancelFunc) {
+// When enableProxy is true the socks5 proxy from app.conf is forwarded to Chrome.
+func newBrowserCtx(parent context.Context, timeoutSecs float64, enableProxy bool) (context.Context, context.CancelFunc) {
 	timeout := time.Duration(timeoutSecs) * time.Second
 	if timeout <= 0 || timeout > browserMaxTimeout {
 		timeout = browserDefaultTimeout
 	}
 
-	allocCtx, allocCancel := chromedp.NewExecAllocator(parent,
-		append(chromedp.DefaultExecAllocatorOptions[:],
-			chromedp.Flag("headless", true),
-			chromedp.Flag("no-sandbox", true),
-			chromedp.Flag("disable-gpu", true),
-			chromedp.Flag("disable-dev-shm-usage", true),
-		)...,
+	opts := append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.Flag("headless", true),
+		chromedp.Flag("no-sandbox", true),
+		chromedp.Flag("disable-gpu", true),
+		chromedp.Flag("disable-dev-shm-usage", true),
 	)
+	if enableProxy {
+		if socks5Addr := proxy.GetSocks5ProxyAddress(); socks5Addr != "" {
+			opts = append(opts, chromedp.Flag("proxy-server", "socks5://"+socks5Addr))
+		}
+	}
+
+	allocCtx, allocCancel := chromedp.NewExecAllocator(parent, opts...)
 
 	ctx, ctxCancel := chromedp.NewContext(allocCtx)
 	ctx, timeoutCancel := context.WithTimeout(ctx, timeout)
@@ -106,7 +119,7 @@ func extractTextFromHTML(rawHTML string) string {
 // browser_navigate
 // ---------------------------------------------------------------------------
 
-type browserNavigateBuiltin struct{}
+type browserNavigateBuiltin struct{ enableProxy bool }
 
 func (b *browserNavigateBuiltin) GetName() string { return "web_browser" }
 
@@ -153,7 +166,7 @@ func (b *browserNavigateBuiltin) Execute(ctx context.Context, arguments map[stri
 
 	waitSelector, _ := arguments["wait_selector"].(string)
 
-	bCtx, cancel := newBrowserCtx(ctx, timeout)
+	bCtx, cancel := newBrowserCtx(ctx, timeout, b.enableProxy)
 	defer cancel()
 
 	var outerHTML, title string
@@ -186,7 +199,7 @@ func (b *browserNavigateBuiltin) Execute(ctx context.Context, arguments map[stri
 // browser_screenshot
 // ---------------------------------------------------------------------------
 
-type browserScreenshotBuiltin struct{}
+type browserScreenshotBuiltin struct{ enableProxy bool }
 
 func (b *browserScreenshotBuiltin) GetName() string { return "browser_screenshot" }
 
@@ -233,7 +246,7 @@ func (b *browserScreenshotBuiltin) Execute(ctx context.Context, arguments map[st
 
 	waitSelector, _ := arguments["wait_selector"].(string)
 
-	bCtx, cancel := newBrowserCtx(ctx, timeout)
+	bCtx, cancel := newBrowserCtx(ctx, timeout, b.enableProxy)
 	defer cancel()
 
 	actions := []chromedp.Action{
@@ -262,7 +275,7 @@ func (b *browserScreenshotBuiltin) Execute(ctx context.Context, arguments map[st
 // browser_evaluate
 // ---------------------------------------------------------------------------
 
-type browserEvaluateBuiltin struct{}
+type browserEvaluateBuiltin struct{ enableProxy bool }
 
 func (b *browserEvaluateBuiltin) GetName() string { return "browser_evaluate" }
 
@@ -318,7 +331,7 @@ func (b *browserEvaluateBuiltin) Execute(ctx context.Context, arguments map[stri
 
 	waitSelector, _ := arguments["wait_selector"].(string)
 
-	bCtx, cancel := newBrowserCtx(ctx, timeout)
+	bCtx, cancel := newBrowserCtx(ctx, timeout, b.enableProxy)
 	defer cancel()
 
 	actions := []chromedp.Action{
@@ -346,7 +359,7 @@ func (b *browserEvaluateBuiltin) Execute(ctx context.Context, arguments map[stri
 // browser_click
 // ---------------------------------------------------------------------------
 
-type browserClickBuiltin struct{}
+type browserClickBuiltin struct{ enableProxy bool }
 
 func (b *browserClickBuiltin) GetName() string { return "browser_click" }
 
@@ -402,7 +415,7 @@ func (b *browserClickBuiltin) Execute(ctx context.Context, arguments map[string]
 
 	waitSelector, _ := arguments["wait_selector"].(string)
 
-	bCtx, cancel := newBrowserCtx(ctx, timeout)
+	bCtx, cancel := newBrowserCtx(ctx, timeout, b.enableProxy)
 	defer cancel()
 
 	actions := []chromedp.Action{

@@ -24,6 +24,7 @@ import (
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/casibase/casibase/agent/builtin_tool"
+	"github.com/casibase/casibase/proxy"
 	"golang.org/x/net/html"
 )
 
@@ -32,17 +33,34 @@ const (
 	webFetchMaxResponseSize  = 5 * 1024 * 1024
 	webFetchDefaultMaxLength = 8000
 	webFetchMaxAllowedLength = 50000
-	webFetchUserAgent        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+	webFetchUserAgent        = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
 )
 
 // WebFetchProvider is the Tool provider Type "Web Fetch".
-type WebFetchProvider struct{}
-
-func (p *WebFetchProvider) BuiltinTools() []builtin_tool.BuiltinTool {
-	return []builtin_tool.BuiltinTool{&webFetchBuiltin{}}
+type WebFetchProvider struct {
+	httpClient *http.Client
 }
 
-type webFetchBuiltin struct{}
+func NewWebFetchProvider(config ProviderConfig) (*WebFetchProvider, error) {
+	var httpClient *http.Client
+	if config.EnableProxy {
+		httpClient = &http.Client{
+			Transport: proxy.ProxyHttpClient.Transport,
+			Timeout:   webFetchDefaultTimeout,
+		}
+	} else {
+		httpClient = &http.Client{Timeout: webFetchDefaultTimeout}
+	}
+	return &WebFetchProvider{httpClient: httpClient}, nil
+}
+
+func (p *WebFetchProvider) BuiltinTools() []builtin_tool.BuiltinTool {
+	return []builtin_tool.BuiltinTool{&webFetchBuiltin{httpClient: p.httpClient}}
+}
+
+type webFetchBuiltin struct {
+	httpClient *http.Client
+}
 
 func (b *webFetchBuiltin) GetName() string {
 	return "web_fetch"
@@ -106,7 +124,7 @@ func (b *webFetchBuiltin) Execute(ctx context.Context, arguments map[string]inte
 	fetchCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
 	defer cancel()
 
-	content, title, err := fetchWebPageContent(fetchCtx, rawURL)
+	content, title, err := fetchWebPageContent(fetchCtx, rawURL, b.httpClient)
 	if err != nil {
 		return webFetchToolError(fmt.Sprintf("failed to fetch URL %s: %s", rawURL, err.Error())), nil
 	}
@@ -119,9 +137,7 @@ func (b *webFetchBuiltin) Execute(ctx context.Context, arguments map[string]inte
 	return webFetchToolText(result), nil
 }
 
-func fetchWebPageContent(ctx context.Context, rawURL string) (string, string, error) {
-	client := &http.Client{Timeout: webFetchDefaultTimeout}
-
+func fetchWebPageContent(ctx context.Context, rawURL string, client *http.Client) (string, string, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
 	if err != nil {
 		return "", "", err

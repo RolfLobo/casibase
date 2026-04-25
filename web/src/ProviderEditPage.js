@@ -1357,7 +1357,7 @@ class ProviderEditPage extends React.Component {
           ) : null
         }
         {
-          this.state.provider.category === "Tool" && this.state.provider.type === "Web Search" ? (
+          this.state.provider.category === "Tool" && ["Web Search", "Web Fetch", "Web Browser"].includes(this.state.provider.type) ? (
             <Row style={{marginTop: "20px"}} >
               <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
                 {Setting.getLabel(i18next.t("provider:Enable proxy"), i18next.t("provider:Enable proxy - Tooltip"))} :
