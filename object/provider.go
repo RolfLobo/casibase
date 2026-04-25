@@ -91,10 +91,11 @@ type Provider struct {
 	ErrorText     string `xorm:"mediumtext" json:"errorText"`       // Error message for the job execution
 	ResultSummary string `xorm:"varchar(500)" json:"resultSummary"` // Short summary of scan results
 
-	IsDefault  bool   `json:"isDefault"`
-	IsRemote   bool   `json:"isRemote"`
-	State      string `xorm:"varchar(100)" json:"state"`
-	BrowserUrl string `xorm:"varchar(200)" json:"browserUrl"`
+	EnableProxy bool   `json:"enableProxy"`
+	IsDefault   bool   `json:"isDefault"`
+	IsRemote    bool   `json:"isRemote"`
+	State       string `xorm:"varchar(100)" json:"state"`
+	BrowserUrl  string `xorm:"varchar(200)" json:"browserUrl"`
 }
 
 func GetMaskedProvider(provider *Provider, isMaskEnabled bool, user *casdoorsdk.User) *Provider {
@@ -775,6 +776,7 @@ func getToolProviderConfig(p *Provider) tool.ProviderConfig {
 		ProviderUrl:  p.ProviderUrl,
 		ClientId:     p.ClientId,
 		ClientSecret: p.ClientSecret,
+		EnableProxy:  p.EnableProxy,
 	}
 }
 

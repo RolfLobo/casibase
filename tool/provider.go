@@ -34,6 +34,7 @@ type ProviderConfig struct {
 	ProviderUrl  string
 	ClientId     string
 	ClientSecret string
+	EnableProxy  bool
 }
 
 // NewProvider instantiates a Tool provider implementation from category and type.

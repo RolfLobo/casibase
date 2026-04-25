@@ -28,6 +28,7 @@ import (
 
 	"github.com/ThinkInAIXYZ/go-mcp/protocol"
 	"github.com/casibase/casibase/agent/builtin_tool"
+	"github.com/casibase/casibase/proxy"
 	"golang.org/x/net/html"
 )
 
@@ -37,6 +38,7 @@ type WebSearchProvider struct {
 	apiKey         string
 	searchEngineID string
 	endpoint       string
+	httpClient     *http.Client
 }
 
 func NewWebSearchProvider(config ProviderConfig) (*WebSearchProvider, error) {
@@ -44,11 +46,23 @@ func NewWebSearchProvider(config ProviderConfig) (*WebSearchProvider, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var httpClient *http.Client
+	if config.EnableProxy {
+		httpClient = &http.Client{
+			Transport: proxy.ProxyHttpClient.Transport,
+			Timeout:   webSearchTimeout,
+		}
+	} else {
+		httpClient = webSearchHTTPClient
+	}
+
 	return &WebSearchProvider{
 		engine:         engine,
 		apiKey:         strings.TrimSpace(config.ClientSecret),
 		searchEngineID: strings.TrimSpace(config.ClientId),
 		endpoint:       strings.TrimSpace(config.ProviderUrl),
+		httpClient:     httpClient,
 	}, nil
 }
 
@@ -58,6 +72,7 @@ func (p *WebSearchProvider) BuiltinTools() []builtin_tool.BuiltinTool {
 		apiKey:         p.apiKey,
 		searchEngineID: p.searchEngineID,
 		endpoint:       p.endpoint,
+		httpClient:     p.httpClient,
 	}}
 }
 
@@ -66,6 +81,7 @@ type webSearchBuiltin struct {
 	apiKey         string
 	searchEngineID string
 	endpoint       string
+	httpClient     *http.Client
 }
 
 const (
@@ -284,25 +300,25 @@ func readWebSearchCount(value interface{}) int {
 func (t *webSearchBuiltin) runWebSearch(ctx context.Context, params webSearchParams) ([]webSearchResult, string, error) {
 	switch t.engine {
 	case webSearchEngineDuckDuckGo:
-		results, err := runDuckDuckGoSearch(ctx, params)
+		results, err := runDuckDuckGoSearch(ctx, params, t.httpClient)
 		if err != nil {
 			return nil, "", err
 		}
 		return results, "duckduckgo", nil
 	case webSearchEngineBing:
-		results, err := runBingSearch(ctx, params)
+		results, err := runBingSearch(ctx, params, t.httpClient)
 		if err != nil {
 			return nil, "", err
 		}
 		return results, "bing", nil
 	case webSearchEngineGoogle:
-		results, err := runGoogleSearch(ctx, params, t.apiKey, t.searchEngineID, t.endpoint)
+		results, err := runGoogleSearch(ctx, params, t.apiKey, t.searchEngineID, t.endpoint, t.httpClient)
 		if err != nil {
 			return nil, "", err
 		}
 		return results, "google", nil
 	case webSearchEngineBaidu:
-		results, err := runBaiduSearch(ctx, params, t.apiKey, t.endpoint)
+		results, err := runBaiduSearch(ctx, params, t.apiKey, t.endpoint, t.httpClient)
 		if err != nil {
 			return nil, "", err
 		}
@@ -327,14 +343,14 @@ func parseWebSearchEngine(value string) (webSearchEngine, error) {
 	}
 }
 
-func runDuckDuckGoSearch(ctx context.Context, params webSearchParams) ([]webSearchResult, error) {
+func runDuckDuckGoSearch(ctx context.Context, params webSearchParams, httpClient *http.Client) ([]webSearchResult, error) {
 	query := url.Values{}
 	query.Set("q", params.Query)
 	if params.Country != "" && params.Language != "" {
 		query.Set("kl", fmt.Sprintf("%s-%s", params.Country, params.Language))
 	}
 
-	body, err := fetchWebSearchHTML(ctx, duckDuckGoHTMLSearchEndpoint, query)
+	body, err := fetchWebSearchHTML(ctx, duckDuckGoHTMLSearchEndpoint, query, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +368,7 @@ func runDuckDuckGoSearch(ctx context.Context, params webSearchParams) ([]webSear
 	return limitWebSearchResults(results, params.Count), nil
 }
 
-func runBingSearch(ctx context.Context, params webSearchParams) ([]webSearchResult, error) {
+func runBingSearch(ctx context.Context, params webSearchParams, httpClient *http.Client) ([]webSearchResult, error) {
 	query := url.Values{}
 	query.Set("q", params.Query)
 	if params.Language != "" {
@@ -362,7 +378,7 @@ func runBingSearch(ctx context.Context, params webSearchParams) ([]webSearchResu
 		query.Set("cc", params.Country)
 	}
 
-	body, err := fetchWebSearchHTML(ctx, bingHTMLSearchEndpoint, query)
+	body, err := fetchWebSearchHTML(ctx, bingHTMLSearchEndpoint, query, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +393,7 @@ func runBingSearch(ctx context.Context, params webSearchParams) ([]webSearchResu
 	return limitWebSearchResults(results, params.Count), nil
 }
 
-func runGoogleSearch(ctx context.Context, params webSearchParams, apiKey string, searchEngineID string, endpoint string) ([]webSearchResult, error) {
+func runGoogleSearch(ctx context.Context, params webSearchParams, apiKey string, searchEngineID string, endpoint string, httpClient *http.Client) ([]webSearchResult, error) {
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, fmt.Errorf("Google search requires an API key in clientSecret")
 	}
@@ -397,7 +413,7 @@ func runGoogleSearch(ctx context.Context, params webSearchParams, apiKey string,
 		query.Set("gl", params.Country)
 	}
 
-	body, err := fetchWebSearchAPI(ctx, http.MethodGet, resolveWebSearchEndpoint(endpoint, googleJSONSearchEndpoint), query, nil, nil)
+	body, err := fetchWebSearchAPI(ctx, http.MethodGet, resolveWebSearchEndpoint(endpoint, googleJSONSearchEndpoint), query, nil, nil, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +433,7 @@ func runGoogleSearch(ctx context.Context, params webSearchParams, apiKey string,
 	return limitWebSearchResults(results, params.Count), nil
 }
 
-func runBaiduSearch(ctx context.Context, params webSearchParams, apiKey string, endpoint string) ([]webSearchResult, error) {
+func runBaiduSearch(ctx context.Context, params webSearchParams, apiKey string, endpoint string, httpClient *http.Client) ([]webSearchResult, error) {
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, fmt.Errorf("Baidu search requires an API key in clientSecret")
 	}
@@ -446,7 +462,7 @@ func runBaiduSearch(ctx context.Context, params webSearchParams, apiKey string, 
 		"Content-Type":               "application/json",
 		"X-Appbuilder-Authorization": fmt.Sprintf("Bearer %s", apiKey),
 	}
-	body, err := fetchWebSearchAPI(ctx, http.MethodPost, resolveWebSearchEndpoint(endpoint, baiduWebSearchEndpoint), nil, bytes.NewReader(requestBytes), headers)
+	body, err := fetchWebSearchAPI(ctx, http.MethodPost, resolveWebSearchEndpoint(endpoint, baiduWebSearchEndpoint), nil, bytes.NewReader(requestBytes), headers, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -469,7 +485,7 @@ func runBaiduSearch(ctx context.Context, params webSearchParams, apiKey string, 
 	return limitWebSearchResults(results, params.Count), nil
 }
 
-func fetchWebSearchAPI(ctx context.Context, method string, endpoint string, query url.Values, body io.Reader, headers map[string]string) ([]byte, error) {
+func fetchWebSearchAPI(ctx context.Context, method string, endpoint string, query url.Values, body io.Reader, headers map[string]string, httpClient *http.Client) ([]byte, error) {
 	parsedURL, err := url.Parse(endpoint)
 	if err != nil {
 		return nil, err
@@ -493,7 +509,7 @@ func fetchWebSearchAPI(ctx context.Context, method string, endpoint string, quer
 		req.Header.Set(key, value)
 	}
 
-	resp, err := webSearchHTTPClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -517,7 +533,7 @@ func fetchWebSearchAPI(ctx context.Context, method string, endpoint string, quer
 	return bodyBytes, nil
 }
 
-func fetchWebSearchHTML(ctx context.Context, endpoint string, query url.Values) (string, error) {
+func fetchWebSearchHTML(ctx context.Context, endpoint string, query url.Values, httpClient *http.Client) (string, error) {
 	parsedURL, err := url.Parse(endpoint)
 	if err != nil {
 		return "", err
@@ -538,7 +554,7 @@ func fetchWebSearchHTML(ctx context.Context, endpoint string, query url.Values) 
 	req.Header.Set("User-Agent", webSearchUserAgent)
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 
-	resp, err := webSearchHTTPClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
