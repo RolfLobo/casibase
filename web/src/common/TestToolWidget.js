@@ -70,6 +70,7 @@ class TestToolWidget extends React.Component {
       // Track the last subType we synced so we can detect in-place mutations.
       // ProviderEditPage mutates the provider object reference rather than
       // replacing it, so provider !== prevProps.provider is always false.
+      lastSyncedType: props.provider ? (props.provider.type || null) : null,
       lastSyncedSubType: props.provider ? (props.provider.subType || null) : null,
     };
   }
@@ -84,6 +85,17 @@ class TestToolWidget extends React.Component {
   componentDidUpdate() {
     const {provider} = this.props;
     if (!provider || provider.category !== "Tool") {
+      return;
+    }
+
+    // Detect type change and reset example content.
+    const currentType = provider.type || null;
+    if (currentType !== this.state.lastSyncedType) {
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({lastSyncedType: currentType, lastSyncedSubType: provider.subType || null, testResult: ""});
+      if (this.props.onUpdateProvider) {
+        this.props.onUpdateProvider("testContent", buildDefaultToolTestJson(provider));
+      }
       return;
     }
 
@@ -152,7 +164,16 @@ class TestToolWidget extends React.Component {
     try {
       const res = await ProviderBackend.testToolProvider(provider);
       if (res.status === "ok") {
-        const out = typeof res.data === "string" ? res.data : JSON.stringify(res.data, null, 2);
+        let out;
+        if (typeof res.data === "string") {
+          try {
+            out = JSON.stringify(JSON.parse(res.data), null, 2);
+          } catch (e) {
+            out = res.data;
+          }
+        } else {
+          out = JSON.stringify(res.data, null, 2);
+        }
         this.setState({testResult: out});
         Setting.showMessage("success", i18next.t("general:Success"));
         await ProviderBackend.updateProvider(provider.owner, provider.name, {...provider, resultSummary: out, errorText: ""});
@@ -202,21 +223,19 @@ class TestToolWidget extends React.Component {
             </Button>
           </Col>
         </Row>
-        {this.state.testResult ? (
-          <Row style={{marginTop: "10px"}}>
-            <Col span={2}></Col>
-            <Col span={10}>
-              <div style={{marginBottom: "5px"}}><strong>{i18next.t("provider:Tool result")}:</strong></div>
-              <Editor
-                value={this.state.testResult}
-                lang="text"
-                height="150px"
-                dark
-                readOnly
-              />
-            </Col>
-          </Row>
-        ) : null}
+        <Row style={{marginTop: "10px"}}>
+          <Col span={2}></Col>
+          <Col span={10}>
+            <div style={{marginBottom: "5px"}}><strong>{i18next.t("provider:Tool result")}:</strong></div>
+            <Editor
+              value={this.state.testResult}
+              lang="json"
+              height="150px"
+              dark
+              readOnly
+            />
+          </Col>
+        </Row>
         <Row style={{marginTop: "20px"}}>
           <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
             {Setting.getLabel(i18next.t("provider:Chat test"), i18next.t("provider:Chat test - Tooltip"))} :
