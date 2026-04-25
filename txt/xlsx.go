@@ -14,24 +14,24 @@
 
 package txt
 
-import (
-	"github.com/tealeg/xlsx"
-)
+import "github.com/xuri/excelize/v2"
 
 func getTextFromXlsx(path string) (string, error) {
-	xlFile, err := xlsx.OpenFile(path)
+	f, err := excelize.OpenFile(path)
 	if err != nil {
 		return "", err
 	}
+	defer f.Close()
+
 	var result string
-	for _, sheet := range xlFile.Sheets {
-		for _, row := range sheet.Rows {
-			for _, cell := range row.Cells {
-				text, err := cell.FormattedValue()
-				if err != nil {
-					return "", err
-				}
-				result += text + " "
+	for _, sheetName := range f.GetSheetList() {
+		rows, err := f.GetRows(sheetName)
+		if err != nil {
+			return "", err
+		}
+		for _, row := range rows {
+			for _, cell := range row {
+				result += cell + " "
 			}
 			result += "\n"
 		}

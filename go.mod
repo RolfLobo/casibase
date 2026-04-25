@@ -1,6 +1,8 @@
 module github.com/casibase/casibase
 
-go 1.23.0
+go 1.24.0
+
+toolchain go1.24.13
 
 require (
 	cloud.google.com/go/compute v1.28.0
@@ -55,7 +57,6 @@ require (
 	github.com/sashabaranov/go-openai v1.32.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/shirou/gopsutil v3.21.11+incompatible
-	github.com/tealeg/xlsx v1.0.5
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common v1.0.1116
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/cvm v1.0.1116
 	github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/hunyuan v1.0.1074
@@ -64,8 +65,9 @@ require (
 	github.com/volcengine/volcengine-go-sdk v1.0.141
 	github.com/wangbin/jiebago v0.3.2
 	github.com/workweixin/weworkapi_golang v0.0.0-20200831071321-c1fdfd3d6e7d
-	golang.org/x/net v0.38.0
-	golang.org/x/text v0.25.0
+	github.com/xuri/excelize/v2 v2.10.1
+	golang.org/x/net v0.50.0
+	golang.org/x/text v0.34.0
 	google.golang.org/genai v1.10.0
 	google.golang.org/grpc v1.71.0
 	k8s.io/api v0.30.0
@@ -107,11 +109,16 @@ require (
 	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/onsi/gomega v1.34.2 // indirect
+	github.com/richardlehane/mscfb v1.0.6 // indirect
+	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
+	github.com/tiendc/go-deepcopy v1.7.2 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
 	github.com/xlab/treeprint v1.2.0 // indirect
+	github.com/xuri/efp v0.0.1 // indirect
+	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.3 // indirect
 	golang.org/x/image v0.27.0 // indirect
@@ -253,14 +260,14 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
-	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/mod v0.32.0 // indirect
 	golang.org/x/oauth2 v0.27.0 // indirect
-	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/sys v0.33.0 // indirect
-	golang.org/x/term v0.32.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/term v0.40.0 // indirect
+	golang.org/x/tools v0.41.0 // indirect
 	google.golang.org/genproto v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a // indirect
