@@ -51,6 +51,8 @@ func NewProvider(config ProviderConfig, lang string) (Provider, error) {
 		return &ShellProvider{}, nil
 	case "Office":
 		return &OfficeProvider{subType: officeSubType(config.SubType)}, nil
+	case "Web Fetch":
+		return &WebFetchProvider{}, nil
 	default:
 		return nil, fmt.Errorf(i18n.Translate(lang, "tool:unsupported tool provider type: %s"), config.Type)
 	}

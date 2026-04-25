@@ -37,6 +37,7 @@ const DEFAULT_TOOL_CONTENT = {
   Time: JSON.stringify({tool: "TimeTool", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
   WebSearch: JSON.stringify({tool: "web_search", arguments: {query: "Casibase web search", count: 3, language: "en", country: "us"}}, null, 2),
   Shell: JSON.stringify({tool: "ShellTool", arguments: {command: "echo hello"}}, null, 2),
+  "Web Fetch": JSON.stringify({tool: "web_fetch", arguments: {url: "https://casibase.org", max_length: 3000}}, null, 2),
 };
 
 function isValidToolTestJson(content) {

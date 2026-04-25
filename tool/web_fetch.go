@@ -1,0 +1,244 @@
+// Copyright 2026 The Casibase Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package tool
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/ThinkInAIXYZ/go-mcp/protocol"
+	"github.com/casibase/casibase/agent/builtin_tool"
+	"golang.org/x/net/html"
+)
+
+const (
+	webFetchDefaultTimeout   = 30 * time.Second
+	webFetchMaxResponseSize  = 5 * 1024 * 1024
+	webFetchDefaultMaxLength = 8000
+	webFetchMaxAllowedLength = 50000
+	webFetchUserAgent        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+)
+
+// WebFetchProvider is the Tool provider Type "Web Fetch".
+type WebFetchProvider struct{}
+
+func (p *WebFetchProvider) BuiltinTools() []builtin_tool.BuiltinTool {
+	return []builtin_tool.BuiltinTool{&webFetchBuiltin{}}
+}
+
+type webFetchBuiltin struct{}
+
+func (b *webFetchBuiltin) GetName() string {
+	return "web_fetch"
+}
+
+func (b *webFetchBuiltin) GetDescription() string {
+	return `Fetch the content of a web page by URL and return its main text content. Useful for reading articles, documentation, or any publicly accessible page. Returns cleaned plain text extracted from the HTML, with scripts and styles removed.`
+}
+
+func (b *webFetchBuiltin) GetInputSchema() interface{} {
+	return map[string]interface{}{
+		"type":                 "object",
+		"additionalProperties": false,
+		"properties": map[string]interface{}{
+			"url": map[string]interface{}{
+				"type":        "string",
+				"description": "The URL of the web page to fetch.",
+			},
+			"timeout": map[string]interface{}{
+				"type":        "number",
+				"description": "Request timeout in seconds (default 30, max 120).",
+				"default":     30,
+				"minimum":     1,
+				"maximum":     120,
+			},
+			"max_length": map[string]interface{}{
+				"type":        "number",
+				"description": fmt.Sprintf("Maximum number of characters to return (default %d, max %d).", webFetchDefaultMaxLength, webFetchMaxAllowedLength),
+				"default":     webFetchDefaultMaxLength,
+				"minimum":     100,
+				"maximum":     webFetchMaxAllowedLength,
+			},
+		},
+		"required": []string{"url"},
+	}
+}
+
+func (b *webFetchBuiltin) Execute(ctx context.Context, arguments map[string]interface{}) (*protocol.CallToolResult, error) {
+	rawURL, ok := arguments["url"].(string)
+	if !ok || strings.TrimSpace(rawURL) == "" {
+		return webFetchToolError("missing required parameter: url"), nil
+	}
+	rawURL = strings.TrimSpace(rawURL)
+
+	timeoutSecs := 30.0
+	if t, ok := arguments["timeout"].(float64); ok && t > 0 {
+		timeoutSecs = t
+		if timeoutSecs > 120 {
+			timeoutSecs = 120
+		}
+	}
+
+	maxLength := webFetchDefaultMaxLength
+	if ml, ok := arguments["max_length"].(float64); ok && ml > 0 {
+		maxLength = int(ml)
+		if maxLength > webFetchMaxAllowedLength {
+			maxLength = webFetchMaxAllowedLength
+		}
+	}
+
+	fetchCtx, cancel := context.WithTimeout(ctx, time.Duration(timeoutSecs)*time.Second)
+	defer cancel()
+
+	content, title, err := fetchWebPageContent(fetchCtx, rawURL)
+	if err != nil {
+		return webFetchToolError(fmt.Sprintf("failed to fetch URL %s: %s", rawURL, err.Error())), nil
+	}
+
+	if len(content) > maxLength {
+		content = content[:maxLength] + fmt.Sprintf("\n\n[Content truncated at %d characters]", maxLength)
+	}
+
+	result := fmt.Sprintf("URL: %s\nTitle: %s\n\n%s", rawURL, title, content)
+	return webFetchToolText(result), nil
+}
+
+func fetchWebPageContent(ctx context.Context, rawURL string) (string, string, error) {
+	client := &http.Client{Timeout: webFetchDefaultTimeout}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, rawURL, nil)
+	if err != nil {
+		return "", "", err
+	}
+	req.Header.Set("User-Agent", webFetchUserAgent)
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+		return "", "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, webFetchMaxResponseSize+1))
+	if err != nil {
+		return "", "", err
+	}
+	if len(bodyBytes) > webFetchMaxResponseSize {
+		return "", "", fmt.Errorf("response body exceeds %d bytes", webFetchMaxResponseSize)
+	}
+
+	root, err := html.Parse(strings.NewReader(string(bodyBytes)))
+	if err != nil {
+		return "", "", fmt.Errorf("failed to parse HTML: %w", err)
+	}
+
+	title := extractHTMLTitle(root)
+	text := extractHTMLText(root)
+	return text, title, nil
+}
+
+// skipWebFetchNode returns true for nodes whose subtree should be skipped entirely.
+func skipWebFetchNode(n *html.Node) bool {
+	if n.Type != html.ElementNode {
+		return false
+	}
+	switch n.Data {
+	case "script", "style", "noscript", "head", "nav", "footer", "aside", "header":
+		return true
+	}
+	for _, attr := range n.Attr {
+		if attr.Key == "role" && (attr.Val == "navigation" || attr.Val == "banner" || attr.Val == "contentinfo") {
+			return true
+		}
+	}
+	return false
+}
+
+func extractHTMLTitle(root *html.Node) string {
+	titleNode := findHTMLNode(root, func(n *html.Node) bool {
+		return n.Type == html.ElementNode && n.Data == "title"
+	})
+	if titleNode == nil {
+		return ""
+	}
+	return strings.TrimSpace(nodeText(titleNode))
+}
+
+func extractHTMLText(root *html.Node) string {
+	var sb strings.Builder
+	var walk func(*html.Node)
+	walk = func(n *html.Node) {
+		if skipWebFetchNode(n) {
+			return
+		}
+		if n.Type == html.TextNode {
+			text := strings.TrimSpace(n.Data)
+			if text != "" {
+				sb.WriteString(text)
+				sb.WriteString(" ")
+			}
+			return
+		}
+		if n.Type == html.ElementNode {
+			switch n.Data {
+			case "p", "div", "section", "article", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr", "blockquote":
+				sb.WriteString("\n")
+			case "br":
+				sb.WriteString("\n")
+			}
+		}
+		for child := n.FirstChild; child != nil; child = child.NextSibling {
+			walk(child)
+		}
+	}
+	walk(root)
+
+	lines := strings.Split(sb.String(), "\n")
+	var cleaned []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			cleaned = append(cleaned, line)
+		}
+	}
+	return strings.Join(cleaned, "\n")
+}
+
+func webFetchToolText(text string) *protocol.CallToolResult {
+	return &protocol.CallToolResult{
+		IsError: false,
+		Content: []protocol.Content{
+			&protocol.TextContent{Type: "text", Text: text},
+		},
+	}
+}
+
+func webFetchToolError(text string) *protocol.CallToolResult {
+	return &protocol.CallToolResult{
+		IsError: true,
+		Content: []protocol.Content{
+			&protocol.TextContent{Type: "text", Text: text},
+		},
+	}
+}
