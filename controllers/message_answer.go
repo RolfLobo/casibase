@@ -191,19 +191,25 @@ func (c *ApiController) GetMessageAnswer() {
 	}
 	agentClients = object.MergeAgentToolClients(agentClients, store, webSearchEnabled, c.GetAcceptLanguage())
 
-	knowledgeCount := store.KnowledgeCount
-	if knowledgeCount <= 0 {
-		knowledgeCount = 10
-	}
+	var knowledge []*model.RawMessage
+	var vectorScores []object.VectorScore
+	embeddingResult := &embedding.EmbeddingResult{}
 
-	knowledge, vectorScores, embeddingResult, err := object.GetNearestKnowledge(store.Name, store.VectorStores, store.SearchProvider, embeddingProvider, embeddingProviderObj, modelProvider, store.Owner, question, knowledgeCount, c.GetAcceptLanguage())
-	if err != nil && err.Error() != "no knowledge vectors found" {
-		err = fmt.Errorf(c.T("message_answer:object.GetNearestKnowledge() error, %s"), err.Error())
-		c.ResponseErrorStream(message, err.Error())
-		return
-	}
-	if embeddingResult == nil {
-		embeddingResult = &embedding.EmbeddingResult{}
+	if chat.ToolProvider == "" {
+		knowledgeCount := store.KnowledgeCount
+		if knowledgeCount <= 0 {
+			knowledgeCount = 10
+		}
+
+		knowledge, vectorScores, embeddingResult, err = object.GetNearestKnowledge(store.Name, store.VectorStores, store.SearchProvider, embeddingProvider, embeddingProviderObj, modelProvider, store.Owner, question, knowledgeCount, c.GetAcceptLanguage())
+		if err != nil && err.Error() != "no knowledge vectors found" {
+			err = fmt.Errorf(c.T("message_answer:object.GetNearestKnowledge() error, %s"), err.Error())
+			c.ResponseErrorStream(message, err.Error())
+			return
+		}
+		if embeddingResult == nil {
+			embeddingResult = &embedding.EmbeddingResult{}
+		}
 	}
 
 	writer := &RefinedWriter{*c.Ctx.ResponseWriter, *NewCleaner(6), []byte{}, []byte{}, []byte{}, []byte{}, []byte{}}
