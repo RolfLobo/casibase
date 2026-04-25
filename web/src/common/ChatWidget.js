@@ -127,6 +127,9 @@ class ChatWidget extends React.Component {
     if (prevProps.chatName !== this.props.chatName && this.props.chatName) {
       this.loadOrCreateChat();
     }
+    if (this.props.modelProviderLocked && prevProps.modelProvider !== this.props.modelProvider && this.props.modelProvider) {
+      this.updateModelProvider(this.props.modelProvider);
+    }
   }
 
   // Load model providers
@@ -134,10 +137,13 @@ class ChatWidget extends React.Component {
     return ProviderBackend.getProviders(this.props.account?.owner || "admin")
       .then((res) => {
         if (res.status === "ok") {
-          const providers = res.data.filter(provider =>
-            provider.category === "Model" && provider.state === "Active"
-          );
-          const selectedProvider = this.props.modelProvider || providers.find(p => p.isDefault)?.name || providers[0].name;
+          const providers = res.data.filter(provider => {
+            if (provider.category !== "Model") {
+              return false;
+            }
+            return this.props.modelProviderLocked ? true : provider.state === "Active";
+          });
+          const selectedProvider = this.props.modelProvider || providers.find(p => p.isDefault)?.name || providers[0]?.name || "";
           this.setState({
             modelProviders: providers,
             currentChat: {
@@ -688,8 +694,16 @@ class ChatWidget extends React.Component {
 
   // Render header with title and controls
   renderHeader() {
-    const {showNewChatButton = true, title} = this.props;
+    const {showNewChatButton = true, title, modelProviderLocked, lockedModelProviderInfo} = this.props;
     const chatDisplayName = this.state.currentChat?.displayName || title || i18next.t("general:Chat");
+
+    // When locked, override the cached backend entry with the live (possibly unsaved) provider info
+    // so that logo and name update immediately when Type / Sub type are changed in the edit form.
+    const displayProviders = (modelProviderLocked && lockedModelProviderInfo)
+      ? this.state.modelProviders.map(p =>
+        p.name === lockedModelProviderInfo.name ? lockedModelProviderInfo : p
+      )
+      : this.state.modelProviders;
 
     return (
       <div style={{
@@ -706,16 +720,17 @@ class ChatWidget extends React.Component {
             <span style={{fontWeight: "500", color: "#333", width: Setting.isMobile() ? "35vw" : "15rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"}}>{chatDisplayName}</span>
           </Tooltip>
 
-          {this.state.modelProviders.length > 0 && (
+          {displayProviders.length > 0 && (
             <Select
               size="small"
               style={{width: Setting.isMobile() ? "35vw" : "15rem"}}
-              value={this.state.currentChat?.modelProvider || this.state.modelProviders[0]?.name || ""}
+              value={this.state.currentChat?.modelProvider || displayProviders[0]?.name || ""}
               onChange={this.updateModelProvider}
               placeholder="Select model"
               optionLabelProp="children"
+              disabled={!!modelProviderLocked}
             >
-              {this.state.modelProviders.map((provider, id) => (
+              {displayProviders.map((provider, id) => (
                 <Select.Option key={id} value={provider.name}>
                   <div style={{display: "flex", alignItems: "center", gap: "6px"}}>
                     <img
