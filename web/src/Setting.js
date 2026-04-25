@@ -1068,6 +1068,10 @@ export function getOtherProviderInfo() {
         logo: `${StaticBaseUrl}/img/social_mcp.png`,
         url: "https://github.com/casibase/casibase",
       },
+      "Office": {
+        logo: `${StaticBaseUrl}/img/social_mcp.png`,
+        url: "https://github.com/casibase/casibase",
+      },
     },
     "Public Cloud": {
       "Aliyun": {
@@ -1387,6 +1391,7 @@ export function getProviderTypeOptions(category) {
       {id: "Time", name: "Time"},
       {id: "WebSearch", name: "WebSearch"},
       {id: "Shell", name: "Shell"},
+      {id: "Office", name: "Office"},
     ];
   } else if (category === "Public Cloud") {
     return ([
@@ -2141,6 +2146,16 @@ export function getProviderSubTypeOptions(category, type) {
     } else if (type === "Shell") {
       return [
         {id: "Default", name: "Default"},
+      ];
+    } else if (type === "Office") {
+      return [
+        {id: "All", name: "All"},
+        {id: "Word Read", name: "Word Read"},
+        {id: "Word Write", name: "Word Write"},
+        {id: "Excel Read", name: "Excel Read"},
+        {id: "Excel Write", name: "Excel Write"},
+        {id: "PowerPoint Read", name: "PowerPoint Read"},
+        {id: "PowerPoint Write", name: "PowerPoint Write"},
       ];
     }
   } else if (category === "Text-to-Speech") {

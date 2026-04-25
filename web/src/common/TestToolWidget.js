@@ -23,6 +23,16 @@ import ChatWidget from "./ChatWidget";
 
 const {Option} = Select;
 
+const OFFICE_TOOL_CONTENT = {
+  "All": JSON.stringify({tool: "word_read", arguments: {path: "/path/to/document.docx"}}, null, 2),
+  "Word Read": JSON.stringify({tool: "word_read", arguments: {path: "/path/to/document.docx"}}, null, 2),
+  "Word Write": JSON.stringify({tool: "word_write", arguments: {path: "/path/to/output.docx", content: "Hello, World!\nThis is a new paragraph."}}, null, 2),
+  "Excel Read": JSON.stringify({tool: "excel_read", arguments: {path: "/path/to/spreadsheet.xlsx", sheet: "Sheet1"}}, null, 2),
+  "Excel Write": JSON.stringify({tool: "excel_write", arguments: {path: "/path/to/output.xlsx", data: "Name,Age\nAlice,30\nBob,25", sheet: "Sheet1"}}, null, 2),
+  "PowerPoint Read": JSON.stringify({tool: "pptx_read", arguments: {path: "/path/to/presentation.pptx"}}, null, 2),
+  "PowerPoint Write": JSON.stringify({tool: "pptx_write", arguments: {path: "/path/to/output.pptx", slides: ["Slide 1 title\nSlide 1 content", "Slide 2 title\nSlide 2 content"]}}, null, 2),
+};
+
 const DEFAULT_TOOL_CONTENT = {
   Time: JSON.stringify({tool: "TimeTool", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
   WebSearch: JSON.stringify({tool: "web_search", arguments: {query: "Casibase web search", count: 3, language: "en", country: "us"}}, null, 2),
@@ -39,6 +49,10 @@ function isValidToolTestJson(content) {
 }
 
 function buildDefaultToolTestJson(provider) {
+  if (provider.type === "Office") {
+    const subType = provider.subType || "All";
+    return OFFICE_TOOL_CONTENT[subType] || OFFICE_TOOL_CONTENT["All"];
+  }
   if (DEFAULT_TOOL_CONTENT[provider.type]) {
     return DEFAULT_TOOL_CONTENT[provider.type];
   }
@@ -52,36 +66,58 @@ class TestToolWidget extends React.Component {
       testButtonLoading: false,
       testResult: "",
       modelProviders: [],
+      modelProvidersLoading: false,
+      // Track the last subType we synced so we can detect in-place mutations.
+      // ProviderEditPage mutates the provider object reference rather than
+      // replacing it, so provider !== prevProps.provider is always false.
+      lastSyncedSubType: props.provider ? (props.provider.subType || null) : null,
     };
   }
 
   componentDidMount() {
-    this.syncFromProvider(this.props.provider, null);
+    this.syncFromProvider(this.props.provider);
     if (this.props.provider && this.props.provider.category === "Tool") {
       this.loadModelProviders();
     }
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate() {
     const {provider} = this.props;
-    if (provider !== prevProps.provider) {
-      this.syncFromProvider(provider, prevProps.provider);
-      if (provider && provider.category === "Tool" && this.state.modelProviders.length === 0) {
-        this.loadModelProviders();
+    if (!provider || provider.category !== "Tool") {
+      return;
+    }
+
+    // Detect Office subType change via our own tracked state.
+    if (provider.type === "Office") {
+      const currentSubType = provider.subType || null;
+      if (currentSubType !== this.state.lastSyncedSubType) {
+        // eslint-disable-next-line react/no-did-update-set-state
+        this.setState({lastSyncedSubType: currentSubType});
+        if (this.props.onUpdateProvider) {
+          this.props.onUpdateProvider("testContent", buildDefaultToolTestJson(provider));
+        }
+        return;
       }
+    }
+
+    if (this.state.modelProviders.length === 0 && !this.state.modelProvidersLoading) {
+      this.loadModelProviders();
     }
   }
 
   loadModelProviders() {
+    this.setState({modelProvidersLoading: true});
     ProviderBackend.getProviders("admin")
       .then((res) => {
         if (res.status === "ok") {
-          this.setState({modelProviders: res.data.filter(p => p.category === "Model")});
+          this.setState({modelProviders: res.data.filter(p => p.category === "Model"), modelProvidersLoading: false});
+        } else {
+          this.setState({modelProvidersLoading: false});
         }
       });
   }
 
-  syncFromProvider(provider, prevProvider) {
+  syncFromProvider(provider) {
     const {onUpdateProvider} = this.props;
     if (!provider || provider.category !== "Tool") {
       return;
@@ -92,8 +128,7 @@ class TestToolWidget extends React.Component {
     if (needsDefault && onUpdateProvider) {
       onUpdateProvider("testContent", buildDefaultToolTestJson(provider));
     }
-    const prevSummary = prevProvider ? prevProvider.resultSummary : null;
-    if (provider.resultSummary && provider.resultSummary !== prevSummary) {
+    if (provider.resultSummary) {
       this.setState({testResult: provider.resultSummary});
     }
   }
