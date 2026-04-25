@@ -96,13 +96,17 @@ func (c *ApiController) GetMessageAnswer() {
 			store = &object.Store{
 				Owner:          "admin",
 				ModelProvider:  chat.ModelProvider,
-				ToolProviders:  []string{chat.ToolProvider},
 				KnowledgeCount: 10,
 			}
 		} else {
 			c.ResponseErrorStream(message, fmt.Sprintf(c.T("account:The store: %s is not found"), chat.Store))
 			return
 		}
+	}
+
+	if chat.ToolProvider != "" {
+		store.ToolProviders = append(store.ToolProviders, chat.ToolProvider)
+		store.Prompt += "\nYou are a helpful AI assistant with access to tools. When the user asks you to perform a task, you MUST use the available tools to complete it directly. Do not refuse or explain why you cannot — just use the tools and fulfill the request."
 	}
 
 	question := store.Welcome
