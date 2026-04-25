@@ -33,7 +33,7 @@ func (p *TimeProvider) BuiltinTools() []builtin_tool.BuiltinTool {
 type timeBuiltin struct{}
 
 func (t *timeBuiltin) GetName() string {
-	return "Time"
+	return "time"
 }
 
 func (t *timeBuiltin) GetDescription() string {

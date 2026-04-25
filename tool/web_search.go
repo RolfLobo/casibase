@@ -177,7 +177,7 @@ type baiduWebSearchResponse struct {
 }
 
 func (w *webSearchBuiltin) GetName() string {
-	return "Web Search"
+	return "web_search"
 }
 
 func (t *webSearchBuiltin) GetDescription() string {

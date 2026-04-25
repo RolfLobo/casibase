@@ -108,7 +108,7 @@ func extractTextFromHTML(rawHTML string) string {
 
 type browserNavigateBuiltin struct{}
 
-func (b *browserNavigateBuiltin) GetName() string { return "Web Browser" }
+func (b *browserNavigateBuiltin) GetName() string { return "web_browser" }
 
 func (b *browserNavigateBuiltin) GetDescription() string {
 	return `Navigate to a URL using a real browser (chromedp/headless Chrome), execute JavaScript, wait for the page to fully render, and return the visible text content. Unlike plain HTTP fetch, this tool handles JavaScript-rendered pages (SPAs, dynamic content, login pages with redirects, etc.).`

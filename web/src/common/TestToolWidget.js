@@ -34,11 +34,11 @@ const OFFICE_TOOL_CONTENT = {
 };
 
 const DEFAULT_TOOL_CONTENT = {
-  Time: JSON.stringify({tool: "Time", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
-  "Web Search": JSON.stringify({tool: "Web Search", arguments: {query: "Casibase web search", count: 3, language: "en", country: "us"}}, null, 2),
-  Shell: JSON.stringify({tool: "Shell", arguments: {command: "echo hello"}}, null, 2),
-  "Web Fetch": JSON.stringify({tool: "Web Fetch", arguments: {url: "https://casibase.org", max_length: 3000}}, null, 2),
-  "Web Browser": JSON.stringify({tool: "Web Browser", arguments: {url: "https://casibase.org", timeout: 60}}, null, 2),
+  Time: JSON.stringify({tool: "time", arguments: {operation: "current", timezone: "Asia/Shanghai"}}, null, 2),
+  "Web Search": JSON.stringify({tool: "web_search", arguments: {query: "Casibase web search", count: 3, language: "en", country: "us"}}, null, 2),
+  Shell: JSON.stringify({tool: "shell", arguments: {command: "echo hello"}}, null, 2),
+  "Web Fetch": JSON.stringify({tool: "web_fetch", arguments: {url: "https://casibase.org", max_length: 3000}}, null, 2),
+  "Web Browser": JSON.stringify({tool: "web_browser", arguments: {url: "https://casibase.org", timeout: 60}}, null, 2),
 };
 
 function isValidToolTestJson(content) {

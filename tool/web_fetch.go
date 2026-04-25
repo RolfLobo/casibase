@@ -45,7 +45,7 @@ func (p *WebFetchProvider) BuiltinTools() []builtin_tool.BuiltinTool {
 type webFetchBuiltin struct{}
 
 func (b *webFetchBuiltin) GetName() string {
-	return "Web Fetch"
+	return "web_fetch"
 }
 
 func (b *webFetchBuiltin) GetDescription() string {

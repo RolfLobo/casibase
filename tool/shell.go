@@ -37,7 +37,7 @@ func (p *ShellProvider) BuiltinTools() []builtin_tool.BuiltinTool {
 type shellBuiltin struct{}
 
 func (s *shellBuiltin) GetName() string {
-	return "Shell"
+	return "shell"
 }
 
 func (s *shellBuiltin) GetDescription() string {
