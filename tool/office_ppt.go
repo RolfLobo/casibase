@@ -245,11 +245,11 @@ func extractTableShapeText(t *ppt.TableShape) string {
 
 const (
 	// Standard 10" × 7.5" slide dimensions in EMU (914400 EMU = 1 inch).
-	slideWidth int64 = 9144000
+	slideWidth  int64 = 9144000
 	slideHeight int64 = 6858000
 
 	// Layout constants for title / body text boxes.
-	marginX  int64 = 457200  // 0.5 inch left/right margin
+	marginX  int64 = 457200 // 0.5 inch left/right margin
 	titleY   int64 = 300000
 	titleH   int64 = 1100000
 	bodyY    int64 = 1500000
