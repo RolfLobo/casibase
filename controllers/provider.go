@@ -215,6 +215,54 @@ func (c *ApiController) RefreshMcpTools() {
 	c.ResponseOk(&provider)
 }
 
+// StartWeChatIlinkLogin starts a WeChat iLink Bot QR login session.
+// @Title StartWeChatIlinkLogin
+// @Tag Provider API
+// @Description start WeChat iLink Bot QR login
+// @Param   id     query    string  true  "The id of the provider (owner/name)"
+// @Success 200 {object} controllers.Response The Response object
+// @router /start-wechat-ilink-login [post]
+func (c *ApiController) StartWeChatIlinkLogin() {
+	if !c.RequireAdmin() {
+		return
+	}
+
+	id := c.Input().Get("id")
+
+	result, err := object.StartWeChatIlinkLogin(id)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	c.ResponseOk(result)
+}
+
+// WaitWeChatIlinkLogin waits once for a WeChat iLink Bot QR login result.
+// @Title WaitWeChatIlinkLogin
+// @Tag Provider API
+// @Description wait once for WeChat iLink Bot QR login result
+// @Param   id          query    string  true  "The id of the provider (owner/name)"
+// @Param   sessionKey  query    string  true  "The QR login session key"
+// @Success 200 {object} controllers.Response The Response object
+// @router /wait-wechat-ilink-login [post]
+func (c *ApiController) WaitWeChatIlinkLogin() {
+	if !c.RequireAdmin() {
+		return
+	}
+
+	id := c.Input().Get("id")
+	sessionKey := c.Input().Get("sessionKey")
+
+	result, err := object.WaitWeChatIlinkLogin(id, sessionKey)
+	if err != nil {
+		c.ResponseError(err.Error())
+		return
+	}
+
+	c.ResponseOk(result)
+}
+
 // TestToolProvider
 // @Title TestToolProvider
 // @Tag Provider API

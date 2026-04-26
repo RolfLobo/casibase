@@ -1152,6 +1152,10 @@ export function getOtherProviderInfo() {
         logo: `${StaticBaseUrl}/img/social_telegram.png`,
         url: "https://telegram.org/",
       },
+      "WeChat iLink Bot": {
+        logo: `${StaticBaseUrl}/img/social_wechat.png`,
+        url: "https://mp.weixin.qq.com/",
+      },
     },
     "Scan": {
       "Nmap": {
@@ -1451,6 +1455,7 @@ export function getProviderTypeOptions(category) {
   } else if (category === "Chat") {
     return [
       {id: "Telegram", name: "Telegram"},
+      {id: "WeChat iLink Bot", name: "WeChat iLink Bot"},
     ];
   } else if (category === "Scan") {
     return [

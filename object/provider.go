@@ -252,6 +252,7 @@ func UpdateProvider(id string, provider *Provider) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	oldId := util.GetIdFromOwnerAndName(owner, name)
 	providerDb, err := getProvider(owner, name)
 	if err != nil {
 		return false, err
@@ -268,6 +269,11 @@ func UpdateProvider(id string, provider *Provider) (bool, error) {
 			return false, err
 		}
 
+		SyncWeChatIlinkProviderById(oldId)
+		if provider.GetId() != oldId {
+			SyncWeChatIlinkProviderById(provider.GetId())
+		}
+
 		// return affected != 0
 		return true, nil
 	}
@@ -275,6 +281,11 @@ func UpdateProvider(id string, provider *Provider) (bool, error) {
 	_, err = adapter.engine.ID(core.PK{owner, name}).AllCols().Update(provider)
 	if err != nil {
 		return false, err
+	}
+
+	SyncWeChatIlinkProviderById(oldId)
+	if provider.GetId() != oldId {
+		SyncWeChatIlinkProviderById(provider.GetId())
 	}
 
 	// return affected != 0
@@ -292,6 +303,7 @@ func AddProvider(provider *Provider) (bool, error) {
 			return false, err
 		}
 
+		SyncWeChatIlinkProviderById(provider.GetId())
 		return affected != 0, nil
 	}
 
@@ -300,10 +312,13 @@ func AddProvider(provider *Provider) (bool, error) {
 		return false, err
 	}
 
+	SyncWeChatIlinkProviderById(provider.GetId())
 	return affected != 0, nil
 }
 
 func DeleteProvider(provider *Provider) (bool, error) {
+	StopWeChatIlinkProviderById(provider.GetId())
+
 	if providerAdapter != nil && provider.IsRemote {
 		affected, err := providerAdapter.engine.ID(core.PK{provider.Owner, provider.Name}).Delete(&Provider{})
 		if err != nil {
@@ -418,7 +433,7 @@ func (p *Provider) GetSpeechToTextProvider(lang string) (stt.SpeechToTextProvide
 }
 
 func (p *Provider) GetChatProvider(lang string) (chat.ChatProvider, error) {
-	pProvider, err := chat.GetChatProvider(p.Type, p.ClientSecret, lang)
+	pProvider, err := chat.GetChatProvider(p.Type, p.ClientSecret, p.ProviderUrl, lang)
 	if err != nil {
 		return nil, err
 	}
@@ -788,7 +803,8 @@ func (p *Provider) restoreMaskedToolProviderSecrets(loadProvider func(owner stri
 	maskedClientSecret := p.ClientSecret == "***"
 	maskedUserKey := p.UserKey == "***"
 	maskedSignKey := p.SignKey == "***"
-	if !maskedClientSecret && !maskedUserKey && !maskedSignKey {
+	maskedConfigText := p.ConfigText == "***"
+	if !maskedClientSecret && !maskedUserKey && !maskedSignKey && !maskedConfigText {
 		return nil
 	}
 	if strings.TrimSpace(p.Owner) == "" || strings.TrimSpace(p.Name) == "" {
@@ -814,6 +830,9 @@ func (p *Provider) restoreMaskedToolProviderSecrets(loadProvider func(owner stri
 	if maskedSignKey && (p.SignKey == "" || p.SignKey == "***") {
 		return fmt.Errorf("masked signKey could not be restored")
 	}
+	if maskedConfigText && (p.ConfigText == "" || p.ConfigText == "***") {
+		return fmt.Errorf("masked configText could not be restored")
+	}
 
 	return nil
 }
@@ -827,6 +846,9 @@ func (p *Provider) processProviderParams(providerDb *Provider) {
 	}
 	if p.SignKey == "***" {
 		p.SignKey = providerDb.SignKey
+	}
+	if p.ConfigText == "***" {
+		p.ConfigText = providerDb.ConfigText
 	}
 	if p.ProviderKey == "" && p.Category == "Model" {
 		p.ProviderKey = generateProviderKey()

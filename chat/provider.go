@@ -34,12 +34,18 @@ type ChatProvider interface {
 	SetWebhook(webhookUrl string) error
 }
 
-func GetChatProvider(typ string, clientSecret string, lang string) (ChatProvider, error) {
+const (
+	WeChatTypeIlinkBot = "WeChat iLink Bot"
+)
+
+func GetChatProvider(typ string, clientSecret string, providerUrl string, lang string) (ChatProvider, error) {
 	var p ChatProvider
 	var err error
 
 	if typ == "Telegram" {
 		p, err = NewTelegramChatProvider(clientSecret, proxy.ProxyHttpClient)
+	} else if typ == WeChatTypeIlinkBot {
+		p, err = NewWeChatIlinkChatProvider(providerUrl, clientSecret, proxy.ProxyHttpClient)
 	} else {
 		return nil, fmt.Errorf(i18n.Translate(lang, "chat:the chat provider type: %s is not supported"), typ)
 	}

@@ -14,7 +14,7 @@
 
 import React from "react";
 import Loading from "./common/Loading";
-import {AutoComplete, Button, Card, Col, Input, InputNumber, Row, Select, Slider, Switch} from "antd";
+import {AutoComplete, Button, Card, Col, Input, InputNumber, QRCode, Row, Select, Slider, Switch} from "antd";
 import {LinkOutlined} from "@ant-design/icons";
 import * as ProviderBackend from "./backend/ProviderBackend";
 import * as Setting from "./Setting";
@@ -43,12 +43,22 @@ class ProviderEditPage extends React.Component {
       originalProvider: null,
       modelProviders: [],
       refreshButtonLoading: false,
+      weChatIlinkLoginLoading: false,
+      weChatIlinkSessionKey: "",
+      weChatIlinkQrcodeUrl: "",
       isNewProvider: props.location?.state?.isNewProvider || false,
     };
+    this.weChatIlinkLoginTimer = null;
+    this.unmounted = false;
   }
 
   UNSAFE_componentWillMount() {
     this.getProvider();
+  }
+
+  componentWillUnmount() {
+    this.unmounted = true;
+    this.clearWeChatIlinkLoginTimer();
   }
 
   getModelProviders() {
@@ -201,6 +211,9 @@ class ProviderEditPage extends React.Component {
     if (provider.category === "Tool") {
       return false;
     }
+    if (provider.category === "Chat" && provider.type === "WeChat iLink Bot") {
+      return false;
+    }
     return (
       ((provider.category === "Embedding" && provider.type === "Baidu Cloud") ||
         (provider.category === "Embedding" && provider.type === "Tencent Cloud") ||
@@ -221,6 +234,7 @@ class ProviderEditPage extends React.Component {
       (provider.category === "Blockchain" && provider.type === "ChainMaker") ||
       provider.category === "Scan" ||
       provider.category === "Tool" ||
+      (provider.category === "Chat" && provider.type === "WeChat iLink Bot") ||
       provider.type === "Dummy" ||
       provider.type === "Ollama"
     );
@@ -566,6 +580,8 @@ class ProviderEditPage extends React.Component {
                 if (value === "Tencent") {
                   this.updateProviderField("subType", "WeCom Bot");
                 }
+              } else if (this.state.provider.category === "Chat") {
+                this.updateProviderField("subType", "");
               }
             })}
             showSearch
@@ -659,7 +675,7 @@ class ProviderEditPage extends React.Component {
           ) : null
         }
         {
-          this.state.provider.category === "Chat" ? (
+          (this.state.provider.category === "Chat" && this.state.provider.type === "Telegram") ? (
             <Row style={{marginTop: "20px"}} >
               <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
                 {this.getClientIdLabel(this.state.provider)} :
@@ -667,6 +683,27 @@ class ProviderEditPage extends React.Component {
               <Col span={22} >
                 <Select virtual={false} disabled={isRemote} style={{width: "100%"}} value={this.state.provider.clientId}
                   onChange={(value) => this.updateProviderField("clientId", value)}
+                  onDropdownVisibleChange={(open) => {if (open) {this.getModelProviders();}}}
+                  showSearch
+                  filterOption={(input, option) =>
+                    option.children[1].toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {this.state.modelProviders.map((provider, index) => this.renderModelProviderOption(provider, index))}
+                </Select>
+              </Col>
+            </Row>
+          ) : null
+        }
+        {
+          (this.state.provider.category === "Chat" && this.state.provider.type === "WeChat iLink Bot") ? (
+            <Row style={{marginTop: "20px"}} >
+              <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                {Setting.getLabel(i18next.t("provider:Model provider"), i18next.t("provider:Model provider - Tooltip"))} :
+              </Col>
+              <Col span={22} >
+                <Select virtual={false} disabled={isRemote} style={{width: "100%"}} value={this.state.provider.modelProvider}
+                  onChange={(value) => this.updateProviderField("modelProvider", value)}
                   onDropdownVisibleChange={(open) => {if (open) {this.getModelProviders();}}}
                   showSearch
                   filterOption={(input, option) =>
@@ -1247,7 +1284,7 @@ class ProviderEditPage extends React.Component {
           onUpdateProvider={this.updateProviderField.bind(this)}
         />
         {
-          this.state.provider.category === "Chat" ? (
+          (this.state.provider.category === "Chat" && this.state.provider.type === "Telegram") ? (
             <Row style={{marginTop: "20px"}} >
               <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
                 {Setting.getLabel(i18next.t("provider:Domain"), i18next.t("provider:Domain - Tooltip"))} :
@@ -1258,6 +1295,70 @@ class ProviderEditPage extends React.Component {
                 }} />
               </Col>
             </Row>
+          ) : null
+        }
+        {
+          (this.state.provider.category === "Chat" && this.state.provider.type === "WeChat iLink Bot") ? (
+            <>
+              <Row style={{marginTop: "20px"}} >
+                <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                  {Setting.getLabel(i18next.t("provider:Account ID"), i18next.t("provider:Account ID - Tooltip"))} :
+                </Col>
+                <Col span={22} >
+                  <Input disabled value={this.state.provider.clientId} />
+                </Col>
+              </Row>
+              <Row style={{marginTop: "20px"}} >
+                <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                  {Setting.getLabel(i18next.t("general:Provider URL"), i18next.t("general:Provider URL - Tooltip"))} :
+                </Col>
+                <Col span={22} >
+                  <Input disabled value={this.state.provider.providerUrl} />
+                </Col>
+              </Row>
+              <Row style={{marginTop: "20px"}} >
+                <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                  {Setting.getLabel(i18next.t("provider:WeChat user ID"), i18next.t("provider:WeChat user ID - Tooltip"))} :
+                </Col>
+                <Col span={22} >
+                  <Input disabled value={this.state.provider.userKey} />
+                </Col>
+              </Row>
+              <Row style={{marginTop: "20px"}} >
+                <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                  {Setting.getLabel(i18next.t("general:Error"), i18next.t("scan:Error - Tooltip"))} :
+                </Col>
+                <Col span={22} >
+                  <Input.TextArea value={this.state.provider.errorText} disabled rows={2} />
+                </Col>
+              </Row>
+              <Row style={{marginTop: "20px"}} >
+                <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
+                  {Setting.getLabel(i18next.t("provider:QR login"), i18next.t("provider:QR login - Tooltip"))} :
+                </Col>
+                <Col span={22} >
+                  <Button disabled={isRemote} type="primary" loading={this.state.weChatIlinkLoginLoading} onClick={() => this.startWeChatIlinkLogin()}>
+                    {i18next.t("provider:Login with QR code")}
+                  </Button>
+                  {
+                    this.state.weChatIlinkQrcodeUrl !== "" ? (
+                      <div style={{marginTop: "20px"}}>
+                        <QRCode value={this.state.weChatIlinkQrcodeUrl} size={240} />
+                        <Input.Group compact style={{marginTop: "20px"}}>
+                          <Input readOnly style={{width: "calc(100% - 90px)"}} value={this.state.weChatIlinkQrcodeUrl} />
+                          <Button onClick={() => {
+                            copy(this.state.weChatIlinkQrcodeUrl);
+                            Setting.showMessage("success", i18next.t("general:Copied to clipboard successfully"));
+                          }}>
+                            {i18next.t("general:Copy")}
+                          </Button>
+                        </Input.Group>
+                      </div>
+                    ) : null
+                  }
+                </Col>
+              </Row>
+            </>
           ) : null
         }
         {
@@ -1344,7 +1445,7 @@ class ProviderEditPage extends React.Component {
           ) : null
         }
         {
-          (this.state.provider.category !== "Model" || this.modelCategoryShowsProviderUrlInput(this.state.provider.type)) ? (
+          (this.state.provider.category !== "Chat" && (this.state.provider.category !== "Model" || this.modelCategoryShowsProviderUrlInput(this.state.provider.type))) ? (
             <Row style={{marginTop: "20px"}} >
               <Col style={{marginTop: "5px"}} span={(Setting.isMobile()) ? 22 : 2}>
                 {this.getProviderUrlLabel(this.state.provider)} :
@@ -1420,6 +1521,91 @@ class ProviderEditPage extends React.Component {
       .catch((error) => {
         Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${error}`);
       });
+  }
+
+  startWeChatIlinkLogin() {
+    const id = `${this.state.provider.owner}/${this.state.provider.name}`;
+    this.clearWeChatIlinkLoginTimer();
+    this.setState({
+      weChatIlinkLoginLoading: true,
+      weChatIlinkQrcodeUrl: "",
+      weChatIlinkSessionKey: "",
+    });
+    ProviderBackend.startWeChatIlinkLogin(id)
+      .then((res) => {
+        if (this.unmounted) {
+          return;
+        }
+        if (res.status === "ok") {
+          this.setState({
+            weChatIlinkSessionKey: res.data.sessionKey,
+            weChatIlinkQrcodeUrl: res.data.qrcodeUrl,
+          }, () => this.waitWeChatIlinkLogin());
+        } else {
+          this.clearWeChatIlinkLoginTimer();
+          this.setState({weChatIlinkLoginLoading: false});
+          Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${res.msg}`);
+        }
+      })
+      .catch((error) => {
+        if (this.unmounted) {
+          return;
+        }
+        this.clearWeChatIlinkLoginTimer();
+        this.setState({weChatIlinkLoginLoading: false});
+        Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${error}`);
+      });
+  }
+
+  waitWeChatIlinkLogin() {
+    const id = `${this.state.provider.owner}/${this.state.provider.name}`;
+    const sessionKey = this.state.weChatIlinkSessionKey;
+    if (sessionKey === "") {
+      return;
+    }
+
+    ProviderBackend.waitWeChatIlinkLogin(id, sessionKey)
+      .then((res) => {
+        if (this.unmounted) {
+          return;
+        }
+        if (res.status !== "ok") {
+          this.clearWeChatIlinkLoginTimer();
+          this.setState({weChatIlinkLoginLoading: false});
+          Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${res.msg}`);
+          return;
+        }
+        if (res.data.connected) {
+          this.clearWeChatIlinkLoginTimer();
+          this.setState({
+            weChatIlinkLoginLoading: false,
+            weChatIlinkSessionKey: "",
+            weChatIlinkQrcodeUrl: "",
+          });
+          Setting.showMessage("success", i18next.t("provider:WeChat connected successfully"));
+          this.getProvider();
+          return;
+        }
+        this.weChatIlinkLoginTimer = setTimeout(() => {
+          this.weChatIlinkLoginTimer = null;
+          this.waitWeChatIlinkLogin();
+        }, 1000);
+      })
+      .catch((error) => {
+        if (this.unmounted) {
+          return;
+        }
+        this.clearWeChatIlinkLoginTimer();
+        this.setState({weChatIlinkLoginLoading: false});
+        Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${error}`);
+      });
+  }
+
+  clearWeChatIlinkLoginTimer() {
+    if (this.weChatIlinkLoginTimer !== null) {
+      clearTimeout(this.weChatIlinkLoginTimer);
+      this.weChatIlinkLoginTimer = null;
+    }
   }
 
   refreshMcpTools() {

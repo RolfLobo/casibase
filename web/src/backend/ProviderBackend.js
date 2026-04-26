@@ -125,3 +125,23 @@ export function setTelegramWebhook(id) {
     },
   }).then(res => res.json());
 }
+
+export function startWeChatIlinkLogin(id) {
+  return fetch(`${Setting.ServerUrl}/api/start-wechat-ilink-login?id=${encodeURIComponent(id)}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Accept-Language": Setting.getAcceptLanguage(),
+    },
+  }).then(res => res.json());
+}
+
+export function waitWeChatIlinkLogin(id, sessionKey) {
+  return fetch(`${Setting.ServerUrl}/api/wait-wechat-ilink-login?id=${encodeURIComponent(id)}&sessionKey=${encodeURIComponent(sessionKey)}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Accept-Language": Setting.getAcceptLanguage(),
+    },
+  }).then(res => res.json());
+}
