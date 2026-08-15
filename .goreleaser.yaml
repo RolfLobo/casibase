@@ -32,7 +32,7 @@ archives:
     name_template: >-
       {{ .ProjectName }}_
       {{- .Os }}_
-      {{- if eq .Arch "amd64" }}x86
+      {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end }}
       {{- if .Arm }}v{{ .Arm }}{{ end }}
 

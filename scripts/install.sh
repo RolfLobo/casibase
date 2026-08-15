@@ -45,7 +45,7 @@ case "${OS}" in
 esac
 
 case "${ARCH}" in
-	x86_64|amd64)  ARCH_NAME="x86" ;;
+	x86_64|amd64)  ARCH_NAME="x86_64" ;;
 	aarch64|arm64) ARCH_NAME="arm64" ;;
 	*) die "Unsupported architecture: ${ARCH}. Download manually from https://github.com/${REPO}/releases" ;;
 esac

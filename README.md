@@ -50,7 +50,7 @@ OpenAgent is an open-source personal AI assistant that brings together powerful 
 
 ## Quick Start
 
-Pre-built binaries for **Linux**, **macOS**, and **Windows** (`amd64` / `arm64`). The installer downloads the latest release and starts OpenAgent on **port 14000**.
+Pre-built binaries for **Linux**, **macOS**, and **Windows** (`x86_64` / `arm64`). The installer downloads the latest release and starts OpenAgent on **port 14000**.
 
 **macOS / Linux / WSL**
 ```bash

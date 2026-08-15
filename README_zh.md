@@ -50,7 +50,7 @@ OpenAgent 是一个开源个人 AI 助手，将强大的大语言模型、私有
 
 ## 快速开始
 
-提供 **Linux**、**macOS** 和 **Windows**（`amd64` / `arm64`）预编译二进制文件。安装脚本会自动下载最新版本并在 **14000 端口**启动 OpenAgent。
+提供 **Linux**、**macOS** 和 **Windows**（`x86_64` / `arm64`）预编译二进制文件。安装脚本会自动下载最新版本并在 **14000 端口**启动 OpenAgent。
 
 **macOS / Linux / WSL**
 ```bash

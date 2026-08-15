@@ -28,7 +28,7 @@ Write-Info "Installing openagent $Version"
 $Arch = (Get-CimInstance Win32_Processor).Architecture
 # 0=x86, 5=ARM, 9=x86-64, 12=ARM64
 $ArchName = switch ($Arch) {
-    9  { 'x86' }
+    9  { 'x86_64' }
     12 { 'arm64' }
     default { throw "Unsupported architecture ($Arch). Download manually from https://github.com/$Repo/releases" }
 }
