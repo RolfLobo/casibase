@@ -39,7 +39,7 @@ class ProviderListPage extends BaseListPage {
       displayName2: "",
       category: "Model",
       type: "OpenAI",
-      subType: "text-davinci-003",
+      subType: Setting.getModelProviderMetadata("OpenAI").defaultSubType,
       clientId: "",
       clientSecret: "",
       mcpTools: [],

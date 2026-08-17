@@ -349,10 +349,10 @@ class ProviderEditPage extends React.Component {
                   this.updateProviderField("type", "Local File System");
                 } else if (value === "Model") {
                   this.updateProviderField("type", "OpenAI");
-                  this.updateProviderField("subType", "gpt-4");
+                  this.updateProviderField("subType", Setting.getModelProviderMetadata("OpenAI").defaultSubType);
                 } else if (value === "Embedding") {
                   this.updateProviderField("type", "OpenAI");
-                  this.updateProviderField("subType", "AdaSimilarity");
+                  this.updateProviderField("subType", "text-embedding-ada-002");
                 } else if (value === "Video") {
                   this.updateProviderField("type", "AWS");
                 } else if (value === "Text-to-Speech") {
@@ -384,62 +384,12 @@ class ProviderEditPage extends React.Component {
                 if (provider.category === "Model") {
                   if (value === "OpenAI Compatible") {
                     this.updateProviderField("subType", "gpt-image-2");
-                  } else if (value === "OpenAI") {
-                    this.updateProviderField("subType", "gpt-4");
-                  } else if (value === "Gemini") {
-                    this.updateProviderField("subType", "gemini-pro");
-                  } else if (value === "OpenRouter") {
-                    this.updateProviderField("subType", "openai/gpt-4");
-                  } else if (value === "iFlytek") {
-                    this.updateProviderField("subType", "spark4.0-ultra");
-                  } else if (value === "Baidu Cloud") {
-                    this.updateProviderField("subType", "ernie-4.0-8k");
-                  } else if (value === "MiniMax") {
-                    this.updateProviderField("subType", "MiniMax-M3");
-                  } else if (value === "Claude") {
-                    this.updateProviderField("subType", "claude-opus-4-0");
-                  } else if (value === "Hugging Face") {
-                    this.updateProviderField("subType", "gpt2");
-                  } else if (value === "ChatGLM") {
-                    this.updateProviderField("subType", "chatglm2-6b");
-                  } else if (value === "Ollama") {
-                    this.updateProviderField("subType", "llama3.3:70b");
-                  } else if (value === "Local") {
-                    this.updateProviderField("subType", "custom-model");
-                  } else if (value === "Azure") {
-                    this.updateProviderField("subType", "gpt-4");
-                  } else if (value === "Cohere") {
-                    this.updateProviderField("subType", "command");
-                  } else if (value === "Alibaba Cloud") {
-                    this.updateProviderField("subType", "qwen-long");
-                  } else if (value === "Moonshot") {
-                    this.updateProviderField("subType", "Moonshot-v1-8k");
-                  } else if (value === "Amazon Bedrock") {
-                    this.updateProviderField("subType", "Claude");
-                  } else if (value === "Baichuan") {
-                    this.updateProviderField("subType", "Baichuan2-Turbo");
-                  } else if (value === "Volcano Engine") {
-                    this.updateProviderField("subType", "Doubao-lite-4k");
-                  } else if (value === "DeepSeek") {
-                    this.updateProviderField("subType", "deepseek-v4-pro");
-                  } else if (value === "StepFun") {
-                    this.updateProviderField("subType", "step-1-8k");
-                  } else if (value === "Tencent Cloud") {
-                    this.updateProviderField("subType", "hunyuan-turbo");
-                  } else if (value === "Yi") {
-                    this.updateProviderField("subType", "yi-lightning");
-                  } else if (value === "Silicon Flow") {
-                    this.updateProviderField("subType", "deepseek-ai/DeepSeek-R1");
-                  } else if (value === "GitHub") {
-                    this.updateProviderField("subType", "gpt-4o");
-                  } else if (value === "Writer") {
-                    this.updateProviderField("subType", "palmyra-x5");
-                  } else if (value === "OpenCode") {
-                    this.updateProviderField("subType", "");
+                  } else {
+                    this.updateProviderField("subType", Setting.getModelProviderMetadata(value).defaultSubType);
                   }
                 } else if (provider.category === "Embedding") {
                   if (value === "OpenAI") {
-                    this.updateProviderField("subType", "AdaSimilarity");
+                    this.updateProviderField("subType", "text-embedding-ada-002");
                   } else if (value === "Gemini") {
                     this.updateProviderField("subType", "embedding-001");
                   } else if (value === "Hugging Face") {
@@ -451,7 +401,7 @@ class ProviderEditPage extends React.Component {
                   } else if (value === "Local") {
                     this.updateProviderField("subType", "custom-embedding");
                   } else if (value === "Azure") {
-                    this.updateProviderField("subType", "AdaSimilarity");
+                    this.updateProviderField("subType", "text-embedding-ada-002");
                   }
                 } else if (provider.category === "Text-to-Speech") {
                   if (value === "Alibaba Cloud") {
