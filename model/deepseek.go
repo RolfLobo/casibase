@@ -60,8 +60,8 @@ func (p *DeepSeekProvider) calculatePrice(modelResult *ModelResult, lang string)
 	}
 
 	if priceItem, ok := priceTable[p.subType]; ok {
-		inputPrice := getPrice(modelResult.TotalTokenCount, priceItem[0])
-		outputPrice := getPrice(modelResult.TotalTokenCount, priceItem[1])
+		inputPrice := getPrice(modelResult.PromptTokenCount, priceItem[0])
+		outputPrice := getPrice(modelResult.ResponseTokenCount, priceItem[1])
 		price = inputPrice + outputPrice
 	} else {
 		return fmt.Errorf(i18n.Translate(lang, "embedding:calculatePrice() error: unknown model type: %s"), p.subType)
