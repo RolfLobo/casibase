@@ -16,12 +16,10 @@ package object
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/the-open-agent/openagent/skillmd"
 	"github.com/the-open-agent/openagent/util"
 	"xorm.io/core"
 )
@@ -64,165 +62,37 @@ func (s *Skill) GetId() string {
 	return fmt.Sprintf("%s/%s", s.Owner, s.Name)
 }
 
-// ---------------------------------------------------------------------------
-// SKILL.md front-matter parser
-// ---------------------------------------------------------------------------
-
-// parseSkillMd parses a raw SKILL.md file and returns its structured fields.
-// Front-matter format:
-//
-//	---
-//	name: <name>
-//	description: '<desc>'   # may be single/double quoted or bare
-//	homepage: <url>         # optional
-//	metadata:               # optional JSON5-ish block
-//	  { ... }
-//	---
-//	<markdown body>
+// parseSkillMd keeps the old six-value shape the callers in this package use,
+// over the shared parser in skillmd.
 func parseSkillMd(raw string) (name, description, homepage, metadata, emoji, body string) {
-	// Must start with "---"
-	trimmed := strings.TrimLeft(raw, " \t")
-	if !strings.HasPrefix(trimmed, "---") {
-		body = raw
-		return
-	}
-
-	// Skip the opening "---" line
-	afterOpen := raw[strings.Index(raw, "---")+3:]
-	newlineIdx := strings.Index(afterOpen, "\n")
-	if newlineIdx >= 0 {
-		afterOpen = afterOpen[newlineIdx+1:]
-	}
-
-	// Find closing "---"
-	closingIdx := strings.Index(afterOpen, "\n---")
-	if closingIdx < 0 {
-		body = raw
-		return
-	}
-
-	frontMatter := afterOpen[:closingIdx]
-	body = strings.TrimSpace(afterOpen[closingIdx+4:]) // skip "\n---"
-
-	// -----------------------------------------------------------------------
-	// Parse front-matter line by line.
-	// We handle:
-	//   key: bare value
-	//   key: 'single-quoted value'
-	//   key: "double-quoted value"
-	//   metadata: <multi-line block until next top-level key or EOF>
-	// -----------------------------------------------------------------------
-	lines := strings.Split(frontMatter, "\n")
-	var metaLines []string
-	inMetadata := false
-
-	for _, line := range lines {
-		// A top-level key starts at column 0 with no leading whitespace
-		// and contains at least one word character before the colon.
-		isTopKey := len(line) > 0 && line[0] != ' ' && line[0] != '\t' && strings.Contains(line, ":")
-
-		if isTopKey {
-			key, val, _ := strings.Cut(line, ":")
-			key = strings.TrimSpace(key)
-			val = strings.TrimSpace(val)
-
-			switch key {
-			case "name":
-				name = unquote(val)
-				inMetadata = false
-			case "description":
-				description = unquote(val)
-				inMetadata = false
-			case "homepage":
-				homepage = unquote(val)
-				inMetadata = false
-			case "metadata":
-				inMetadata = true
-				metaLines = nil
-				if val != "" {
-					metaLines = append(metaLines, val)
-				}
-			default:
-				inMetadata = false
-			}
-		} else if inMetadata {
-			metaLines = append(metaLines, line)
-		}
-	}
-
-	metadata = strings.Join(metaLines, "\n")
-
-	// Extract emoji: look for  "emoji": "<value>"
-	if m := regexp.MustCompile(`"emoji"\s*:\s*"([^"]+)"`).FindStringSubmatch(metadata); len(m) > 1 {
-		emoji = m[1]
-	}
-
-	return
+	parsed := skillmd.Parse(raw)
+	return parsed.Name, parsed.Description, parsed.Homepage, parsed.Metadata, parsed.Emoji, parsed.Content
 }
 
-// unquote strips surrounding single or double quotes from a YAML string value.
-func unquote(s string) string {
-	s = strings.TrimSpace(s)
-	if len(s) >= 2 {
-		if (s[0] == '"' && s[len(s)-1] == '"') || (s[0] == '\'' && s[len(s)-1] == '\'') {
-			return s[1 : len(s)-1]
-		}
-	}
-	return s
-}
-
-// ---------------------------------------------------------------------------
-// LoadSkillFromPath reads a skill folder from the server filesystem and
-// returns a partially-populated Skill (not yet persisted to the database).
-// ---------------------------------------------------------------------------
-
-// LoadSkill reads {dir}/SKILL.md and all {dir}/references/*.md files,
-// parses them, and returns a Skill struct ready to be saved with AddSkill.
+// LoadSkill reads {dir}/SKILL.md and all {dir}/references/* files, and returns
+// a Skill struct ready to be saved with AddSkill.
 func LoadSkill(dir string) (*Skill, error) {
-	skillMdPath := filepath.Join(dir, "SKILL.md")
-	rawBytes, err := os.ReadFile(skillMdPath)
+	parsed, err := skillmd.LoadFolder(dir)
 	if err != nil {
-		return nil, fmt.Errorf("cannot read SKILL.md at %s: %w", skillMdPath, err)
-	}
-	raw := string(rawBytes)
-
-	name, description, homepage, metadata, emoji, content := parseSkillMd(raw)
-	if name == "" {
-		// Fall back to directory base-name
-		name = filepath.Base(dir)
+		return nil, err
 	}
 
-	// Read references/
-	var refs []SkillReference
-	refsDir := filepath.Join(dir, "references")
-	if entries, err2 := os.ReadDir(refsDir); err2 == nil {
-		for _, e := range entries {
-			if e.IsDir() {
-				continue
-			}
-			refPath := filepath.Join(refsDir, e.Name())
-			refBytes, err3 := os.ReadFile(refPath)
-			if err3 != nil {
-				continue
-			}
-			refs = append(refs, SkillReference{
-				Name:    e.Name(),
-				Content: string(refBytes),
-			})
-		}
+	references := []SkillReference{}
+	for _, file := range parsed.References {
+		references = append(references, SkillReference{Name: file.Name, Content: file.Content})
 	}
 
 	return &Skill{
-		Name:        name,
-		DisplayName: name,
+		Name:        parsed.Name,
+		DisplayName: parsed.DisplayName,
 		Type:        "built-in",
-		Description: description,
-		Homepage:    homepage,
-		Emoji:       emoji,
-		Metadata:    metadata,
-		Content:     content,
-		SkillMd:     raw,
-		References:  refs,
+		Description: parsed.Description,
+		Homepage:    parsed.Homepage,
+		Emoji:       parsed.Emoji,
+		Metadata:    parsed.Metadata,
+		Content:     parsed.Content,
+		SkillMd:     parsed.SkillMd,
+		References:  references,
 		State:       "Active",
 	}, nil
 }

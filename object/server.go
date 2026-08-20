@@ -44,8 +44,18 @@ type Server struct {
 	UpdatedTime string `xorm:"varchar(100)" json:"updatedTime"`
 	DisplayName string `xorm:"varchar(100)" json:"displayName"`
 
-	Url         string     `xorm:"varchar(500)" json:"url"`
-	Token       string     `xorm:"varchar(500)" json:"token"`
+	Url   string `xorm:"varchar(500)" json:"url"`
+	Token string `xorm:"varchar(500)" json:"token"`
+
+	// Transport selects how the server is reached: "streamablehttp", "sse" or
+	// "stdio". Empty means auto-detect: Url set -> streamablehttp, else stdio.
+	Transport string   `xorm:"varchar(100)" json:"transport"`
+	Command   string   `xorm:"varchar(500)" json:"command"`
+	Args      []string `xorm:"mediumtext" json:"args"`
+	// Env carries process environment variables for stdio servers and extra HTTP
+	// headers for URL-based ones. Values are masked like Token in admin APIs.
+	Env map[string]string `xorm:"mediumtext" json:"env"`
+
 	Tools       []*McpTool `xorm:"mediumtext" json:"tools"`
 	TestContent string     `xorm:"varchar(500)" json:"testContent"`
 	IsDefault   bool       `json:"isDefault"`
@@ -55,12 +65,54 @@ func (s *Server) GetId() string {
 	return fmt.Sprintf("%s/%s", s.Owner, s.Name)
 }
 
+// IsConfigured reports whether the server has enough information to be dialed:
+// a URL for HTTP transports, or a command for stdio.
+func (s *Server) IsConfigured() bool {
+	return s.Url != "" || s.Command != ""
+}
+
+// McpConfig renders the server as a transport-agnostic mcp.ServerConfig.
+// Env means process environment for stdio servers and HTTP headers for
+// URL-based ones, which is why Token is folded in only for the latter.
+func (s *Server) McpConfig() mcp.ServerConfig {
+	cfg := mcp.ServerConfig{
+		Type:    s.Transport,
+		URL:     s.Url,
+		Command: s.Command,
+		Args:    s.Args,
+	}
+	if cfg.Type == "" {
+		if s.Url != "" {
+			cfg.Type = "streamablehttp"
+		} else {
+			cfg.Type = "stdio"
+		}
+	}
+
+	env := map[string]string{}
+	for k, v := range s.Env {
+		env[k] = v
+	}
+	if cfg.Type != "stdio" && s.Token != "" {
+		env["Authorization"] = "Bearer " + s.Token
+	}
+	if len(env) > 0 {
+		cfg.Env = env
+	}
+	return cfg
+}
+
 func GetMaskedServer(server *Server, isMaskEnabled bool) *Server {
 	if !isMaskEnabled || server == nil {
 		return server
 	}
 	if server.Token != "" {
 		server.Token = "***"
+	}
+	for key, value := range server.Env {
+		if value != "" {
+			server.Env[key] = "***"
+		}
 	}
 	return server
 }
@@ -81,6 +133,13 @@ func (s *Server) processServerParams(oldServer *Server) {
 	}
 	if s.Token == "***" {
 		s.Token = oldServer.Token
+	}
+	for key, value := range s.Env {
+		if value == "***" {
+			if oldValue, ok := oldServer.Env[key]; ok {
+				s.Env[key] = oldValue
+			}
+		}
 	}
 }
 
@@ -199,8 +258,8 @@ func SyncMcpTool(id string, server *Server, isCleared bool) (bool, error) {
 }
 
 func syncServerTools(server *Server) error {
-	if server.Url == "" {
-		return fmt.Errorf("server URL is empty")
+	if !server.IsConfigured() {
+		return fmt.Errorf("server has neither a URL nor a command")
 	}
 
 	oldTools := server.Tools
@@ -208,7 +267,7 @@ func syncServerTools(server *Server) error {
 		oldTools = []*McpTool{}
 	}
 
-	tools, err := mcppkg.GetToolsFromURL(server.Url, server.Token)
+	tools, err := mcppkg.GetToolsFromConfig(server.McpConfig())
 	if err != nil {
 		return err
 	}
@@ -247,11 +306,11 @@ func DeleteServer(server *Server) (bool, error) {
 // McpToolSet with the allowed tools and the open connection.
 // The caller must close all connections in McpToolSet.Connections when done.
 func (s *Server) BuildMcpToolSet() (*mcp.ToolSet, error) {
-	if s.Url == "" {
+	if !s.IsConfigured() {
 		return nil, nil
 	}
 
-	cli, err := mcp.NewClient(s.Url, s.Token)
+	cli, err := mcp.NewClientFromConfig(s.McpConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -308,7 +367,7 @@ func GetServerMcpToolSet(owner, serverName, lang string) (*mcp.ToolSet, error) {
 // TestMcpServer connects to the server URL and calls the tool specified in
 // TestContent (JSON: {"tool": "toolName", "arguments": {...}}).
 func TestMcpServer(s *Server, lang string) (string, error) {
-	if s.Url == "" {
+	if !s.IsConfigured() {
 		return "", fmt.Errorf(i18n.Translate(lang, "object:Server URL is empty"))
 	}
 	if s.Token == "***" {
@@ -333,7 +392,7 @@ func TestMcpServer(s *Server, lang string) (string, error) {
 	if payload.Arguments == nil {
 		payload.Arguments = map[string]interface{}{}
 	}
-	return mcp.CallTool(s.Url, s.Token, payload.Tool, payload.Arguments)
+	return mcp.CallToolWithConfig(s.McpConfig(), payload.Tool, payload.Arguments)
 }
 
 func GetServerCount(owner, field, value string) (int64, error) {

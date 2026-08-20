@@ -102,6 +102,10 @@
     "Issue content cannot be longer than %d characters": "Issue content cannot be longer than %d characters",
     "Issue title cannot be longer than %d characters": "Issue title cannot be longer than %d characters"
   },
+  "migration": {
+    "Please upload a config file or fill in a directory to scan": "Please upload a config file or fill in a directory to scan",
+    "The migration run: %s is not found": "The migration run: %s is not found"
+  },
   "model": {
     "QueryText() error: unknown model type: %s": "QueryText() error: unknown model type: %s",
     "The token count: [%d] exceeds the model: [%s]'s maximum token count: [%d]": "The token count: [%d] exceeds the model: [%s]'s maximum token count: [%d]",

@@ -94,6 +94,7 @@ export const NavItemTree = ({disabled, casdoorAvailable, checkedKeys, defaultExp
             {title: i18next.t("general:Usages"), key: "/usages"},
             {title: i18next.t("general:Visitors"), key: "/visitors"},
             {title: i18next.t("general:System Info"), key: "/sysinfo"},
+            {title: i18next.t("general:Migration"), key: "/migration"},
             {title: i18next.t("general:Swagger"), key: "/swagger"},
           ],
         },

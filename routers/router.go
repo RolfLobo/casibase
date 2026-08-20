@@ -142,6 +142,15 @@ func initAPI() {
 	beego.Router("/api/get-marketplace-skills", &controllers.ApiController{}, "GET:GetMarketplaceSkills")
 	beego.Router("/api/install-marketplace-skill", &controllers.ApiController{}, "POST:InstallMarketplaceSkill")
 
+	beego.Router("/api/get-migration-sources", &controllers.ApiController{}, "GET:GetMigrationSources")
+	beego.Router("/api/upload-migration-file", &controllers.ApiController{}, "POST:UploadMigrationFile")
+	beego.Router("/api/preview-migration", &controllers.ApiController{}, "POST:PreviewMigration")
+	beego.Router("/api/start-migration", &controllers.ApiController{}, "POST:StartMigration")
+	beego.Router("/api/get-migration-progress", &controllers.ApiController{}, "GET:GetMigrationProgress")
+	beego.Router("/api/get-migrations", &controllers.ApiController{}, "GET:GetMigrations")
+	beego.Router("/api/get-migration", &controllers.ApiController{}, "GET:GetMigration")
+	beego.Router("/api/rollback-migration", &controllers.ApiController{}, "POST:RollbackMigration")
+
 	beego.Router("/api/get-global-tools", &controllers.ApiController{}, "GET:GetGlobalTools")
 	beego.Router("/api/get-tools", &controllers.ApiController{}, "GET:GetTools")
 	beego.Router("/api/get-tool", &controllers.ApiController{}, "GET:GetTool")

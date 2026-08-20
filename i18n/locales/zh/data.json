@@ -102,6 +102,10 @@
     "Issue content cannot be longer than %d characters": "问题内容不能超过 %d 个字符",
     "Issue title cannot be longer than %d characters": "问题标题不能超过 %d 个字符"
   },
+  "migration": {
+    "Please upload a config file or fill in a directory to scan": "请上传配置文件，或填写要扫描的目录",
+    "The migration run: %s is not found": "找不到迁移任务：%s"
+  },
   "model": {
     "QueryText() error: unknown model type: %s": "QueryText()错误：未知模型类型：%s",
     "The token count: [%d] exceeds the model: [%s]'s maximum token count: [%d]": "标记（token）数量：[%d] 超过模型：[%s] 的最大标记数量：[%d]",

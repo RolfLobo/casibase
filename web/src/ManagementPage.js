@@ -30,6 +30,7 @@ import {
   FundOutlined,
   HistoryOutlined,
   HomeOutlined,
+  ImportOutlined,
   InboxOutlined,
   LayoutOutlined,
   LineChartOutlined,
@@ -102,6 +103,7 @@ import FormEditPage from "./FormEditPage";
 import FormDataPage from "./FormDataPage";
 import ChatPage from "./ChatPage";
 import QuickSetupPage from "./QuickSetupPage";
+import MigrationPage from "./migration/MigrationPage";
 import StoreHubPage from "./StoreHubPage";
 import StoreViewPage from "./StoreViewPage";
 import UsagePage from "./UsagePage";
@@ -524,6 +526,7 @@ function ManagementPage(props) {
           Setting.getItem(<Link to="/usages">{i18next.t("general:Usages")}</Link>, "/usages", <LineChartOutlined />),
           Setting.getItem(<Link to="/visitors">{i18next.t("general:Visitors")}</Link>, "/visitors", <FundOutlined />),
           Setting.getItem(<Link to="/sysinfo">{i18next.t("general:System Info")}</Link>, "/sysinfo", <DashboardOutlined />),
+          Setting.getItem(<Link to="/migration">{i18next.t("general:Migration")}</Link>, "/migration", <ImportOutlined />),
           Setting.getItem(
             <a target="_blank" rel="noreferrer" href={Setting.isLocalhost() ? `${Setting.ServerUrl}/swagger/index.html` : "/swagger/index.html"}>
               {i18next.t("general:Swagger")}
@@ -630,6 +633,7 @@ function ManagementPage(props) {
         <Route exact path="/forms/:formName/data" render={(props) => renderSigninIfNotSignedIn(<FormDataPage key={props.match.params.formName} account={account} {...props} />)} />
         <Route exact path="/resources" render={(props) => renderSigninIfNotSignedIn(<ResourceListPage account={account} {...props} />)} />
         <Route exact path="/quick-setup" render={(props) => renderSigninIfNotSignedIn(<QuickSetupPage account={account} {...props} />)} />
+        <Route exact path="/migration" render={(props) => renderSigninIfNotSignedIn(<MigrationPage account={account} {...props} />)} />
         <Route exact path="/hub" render={(props) => renderSigninIfNotSignedIn(<StoreHubPage account={account} site={site} {...props} />)} />
         <Route exact path="/agents/:owner/:storeName" render={(props) => renderSigninIfNotSignedIn(<StoreViewPage account={account} {...props} />)} />
         <Route exact path="/agents/:owner/:storeName/insights/:sub" render={(props) => renderSigninIfNotSignedIn(<StoreViewPage account={account} {...props} />)} />

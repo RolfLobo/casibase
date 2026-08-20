@@ -14,12 +14,13 @@
 
 import React from "react";
 import Loading from "./common/Loading";
-import {Button, Card, Col, Input, Row, Space} from "antd";
+import {Button, Card, Col, Input, Row, Select, Space} from "antd";
 import {LinkOutlined} from "@ant-design/icons";
 import * as ServerBackend from "./backend/ServerBackend";
 import * as Setting from "./Setting";
 import i18next from "i18next";
 import ToolTable from "./table/ToolTable";
+import KeyValueTable from "./table/KeyValueTable";
 import TestMcpWidget from "./common/TestMcpWidget";
 
 class ServerEditPage extends React.Component {
@@ -57,6 +58,16 @@ class ServerEditPage extends React.Component {
     const server = this.state.server;
     server[key] = value;
     this.setState({server});
+  }
+
+  // An older server row has no transport, so it is inferred the way the backend
+  // does: a URL means HTTP, anything else is a local stdio process.
+  getTransport() {
+    const server = this.state.server;
+    if (server.transport) {
+      return server.transport;
+    }
+    return server.url ? "streamablehttp" : "stdio";
   }
 
   submitServerEdit(willExist) {
@@ -160,14 +171,60 @@ class ServerEditPage extends React.Component {
               8
             )}
             {this.renderServerField(
-              Setting.getLabel(i18next.t("general:URL"), i18next.t("general:URL - Tooltip")),
-              <Input prefix={<LinkOutlined />} value={server.url} onChange={e => this.updateServerField("url", e.target.value)} />,
-              16
+              Setting.getLabel(i18next.t("server:Transport"), i18next.t("server:Transport - Tooltip")),
+              <Select
+                style={{width: "100%"}}
+                value={this.getTransport()}
+                onChange={value => this.updateServerField("transport", value)}
+                options={[
+                  {value: "streamablehttp", label: "Streamable HTTP"},
+                  {value: "sse", label: "SSE"},
+                  {value: "stdio", label: "stdio"},
+                ]}
+              />,
+              8
             )}
+          </Row>
+          <Row gutter={rowGutter}>
+            {this.getTransport() === "stdio" ? (
+              <React.Fragment>
+                {this.renderServerField(
+                  Setting.getLabel(i18next.t("server:Command"), i18next.t("server:Command - Tooltip")),
+                  <Input value={server.command} onChange={e => this.updateServerField("command", e.target.value)} />,
+                  8
+                )}
+                {this.renderServerField(
+                  Setting.getLabel(i18next.t("server:Arguments"), i18next.t("server:Arguments - Tooltip")),
+                  <Select mode="tags" style={{width: "100%"}} tokenSeparators={[]} value={server.args || []} onChange={value => this.updateServerField("args", value)} />,
+                  16
+                )}
+              </React.Fragment>
+            ) : (
+              <React.Fragment>
+                {this.renderServerField(
+                  Setting.getLabel(i18next.t("general:URL"), i18next.t("general:URL - Tooltip")),
+                  <Input prefix={<LinkOutlined />} value={server.url} onChange={e => this.updateServerField("url", e.target.value)} />,
+                  16
+                )}
+                {this.renderServerField(
+                  Setting.getLabel(i18next.t("server:Access token"), i18next.t("server:Access token - Tooltip")),
+                  <Input.Password placeholder={"***"} value={server.token} onChange={e => this.updateServerField("token", e.target.value)} />,
+                  16
+                )}
+              </React.Fragment>
+            )}
+          </Row>
+          <Row gutter={rowGutter}>
             {this.renderServerField(
-              Setting.getLabel(i18next.t("server:Access token"), i18next.t("server:Access token - Tooltip")),
-              <Input.Password placeholder={"***"} value={server.token} onChange={e => this.updateServerField("token", e.target.value)} />,
-              16
+              this.getTransport() === "stdio"
+                ? Setting.getLabel(i18next.t("server:Environment variables"), i18next.t("server:Environment variables - Tooltip"))
+                : Setting.getLabel(i18next.t("server:HTTP headers"), i18next.t("server:HTTP headers - Tooltip")),
+              <KeyValueTable
+                key={server.name}
+                keyValues={server.env || {}}
+                onUpdateTable={value => this.updateServerField("env", value)}
+              />,
+              24
             )}
           </Row>
         </Card>
