@@ -33,7 +33,7 @@ function ProgressStep(props) {
 
   const columns = [
     {
-      title: i18next.t("migration:Category"),
+      title: i18next.t("general:Category"),
       dataIndex: "category",
       key: "category",
       width: 130,
@@ -54,7 +54,7 @@ function ProgressStep(props) {
       },
     },
     {
-      title: i18next.t("migration:Action"),
+      title: i18next.t("general:Action"),
       dataIndex: "action",
       key: "action",
       width: 120,

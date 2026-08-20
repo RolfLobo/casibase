@@ -194,7 +194,7 @@ class ServerEditPage extends React.Component {
                   8
                 )}
                 {this.renderServerField(
-                  Setting.getLabel(i18next.t("server:Arguments"), i18next.t("server:Arguments - Tooltip")),
+                  Setting.getLabel(i18next.t("general:Arguments"), i18next.t("server:Arguments - Tooltip")),
                   <Select mode="tags" style={{width: "100%"}} tokenSeparators={[]} value={server.args || []} onChange={value => this.updateServerField("args", value)} />,
                   16
                 )}

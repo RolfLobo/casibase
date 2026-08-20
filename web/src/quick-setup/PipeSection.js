@@ -67,7 +67,7 @@ function PipeSection({
           }}
         >
           <div style={{fontSize: 28, marginBottom: 8, opacity: 0.4}}>✕</div>
-          <div style={{fontWeight: 600, fontSize: 13, marginBottom: 2}}>{i18next.t("setup:Skip")}</div>
+          <div style={{fontWeight: 600, fontSize: 13, marginBottom: 2}}>{i18next.t("general:Skip")}</div>
           <div style={{fontSize: 11, color: "var(--ant-color-text-secondary)"}}>{i18next.t("setup:Set up later")}</div>
         </div>
       </div>

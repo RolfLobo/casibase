@@ -86,7 +86,7 @@ function MigrationHistory(props) {
       width: 200,
     },
     {
-      title: i18next.t("migration:Status"),
+      title: i18next.t("general:Status"),
       dataIndex: "status",
       key: "status",
       width: 130,
@@ -95,12 +95,12 @@ function MigrationHistory(props) {
           return <Tag>{i18next.t("migration:Rolled back")}</Tag>;
         }
         if (status === "Error") {
-          return <Tag color="error">{i18next.t("migration:Error")}</Tag>;
+          return <Tag color="error">{i18next.t("application:Failed")}</Tag>;
         }
         if (status === "Running") {
-          return <Tag color="processing">{i18next.t("migration:Running")}</Tag>;
+          return <Tag color="processing">{i18next.t("application:Running")}</Tag>;
         }
-        return <Tag color="success">{i18next.t("migration:Done")}</Tag>;
+        return <Tag color="success">{i18next.t("chat:Done")}</Tag>;
       },
     },
     {
@@ -111,7 +111,7 @@ function MigrationHistory(props) {
       render: items => (items || []).length,
     },
     {
-      title: i18next.t("migration:Path"),
+      title: i18next.t("general:Path"),
       dataIndex: "sourcePath",
       key: "sourcePath",
       render: path => (path ? <Text type="secondary">{path}</Text> : "-"),
@@ -143,7 +143,7 @@ function MigrationHistory(props) {
       pagination={false}
       dataSource={record.items || []}
       columns={[
-        {title: i18next.t("migration:Category"), dataIndex: "category", key: "category", width: 130, render: category => renderCategoryTag(category)},
+        {title: i18next.t("general:Category"), dataIndex: "category", key: "category", width: 130, render: category => renderCategoryTag(category)},
         {title: i18next.t("migration:From"), dataIndex: "sourceName", key: "sourceName"},
         {
           title: i18next.t("migration:To"),
@@ -154,7 +154,7 @@ function MigrationHistory(props) {
             return path && !record.isRolledBack ? <Link to={path}>{name}</Link> : <Text code>{name}</Text>;
           },
         },
-        {title: i18next.t("migration:Action"), dataIndex: "action", key: "action", width: 120, render: action => renderActionTag(action)},
+        {title: i18next.t("general:Action"), dataIndex: "action", key: "action", width: 120, render: action => renderActionTag(action)},
       ]}
     />
   );

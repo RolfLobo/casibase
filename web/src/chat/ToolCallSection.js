@@ -202,7 +202,7 @@ export const ToolCallCard = ({toolCall, isDark, themeColor, isLast}) => {
                 letterSpacing: "0.7px",
                 marginBottom: "5px",
               }}>
-                {i18next.t("chat:Arguments")}
+                {i18next.t("general:Arguments")}
               </div>
               {toolCall.content ? renderJsonContent(toolCall.arguments) : renderStreamingContent(toolCall.arguments, isDark)}
             </div>

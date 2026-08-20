@@ -228,7 +228,7 @@ function MigrationPage() {
                   style={{marginBottom: 24}}
                   items={[
                     {title: i18next.t("migration:Source")},
-                    {title: i18next.t("migration:Preview")},
+                    {title: i18next.t("general:Preview")},
                     {title: i18next.t("migration:Import")},
                   ]}
                 />

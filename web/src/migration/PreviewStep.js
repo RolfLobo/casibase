@@ -35,7 +35,7 @@ function PreviewStep(props) {
 
   const columns = [
     {
-      title: i18next.t("migration:Category"),
+      title: i18next.t("general:Category"),
       dataIndex: "category",
       key: "category",
       width: 130,
@@ -66,14 +66,14 @@ function PreviewStep(props) {
       render: name => <Text code>{name}</Text>,
     },
     {
-      title: i18next.t("migration:Action"),
+      title: i18next.t("general:Action"),
       dataIndex: "action",
       key: "action",
       width: 120,
       render: (action, record) => (selectedKeys.includes(record.key) ? renderActionTag(action) : <Tag>{i18next.t("migration:Not selected")}</Tag>),
     },
     {
-      title: i18next.t("migration:Size"),
+      title: i18next.t("general:Size"),
       dataIndex: "count",
       key: "count",
       width: 90,
@@ -98,8 +98,8 @@ function PreviewStep(props) {
         <Descriptions size="small" column={{xs: 1, sm: 2, md: 4}}>
           <Descriptions.Item label={i18next.t("migration:Source")}>{plan.source}</Descriptions.Item>
           <Descriptions.Item label={i18next.t("migration:Version")}>{plan.sourceVersion || "-"}</Descriptions.Item>
-          <Descriptions.Item label={i18next.t("migration:Path")}>{plan.sourcePath || "-"}</Descriptions.Item>
-          <Descriptions.Item label={i18next.t("migration:Owner")}>{plan.owner}</Descriptions.Item>
+          <Descriptions.Item label={i18next.t("general:Path")}>{plan.sourcePath || "-"}</Descriptions.Item>
+          <Descriptions.Item label={i18next.t("general:Owner")}>{plan.owner}</Descriptions.Item>
         </Descriptions>
       </Card>
 
@@ -120,10 +120,10 @@ function PreviewStep(props) {
       <Card size="small" title={i18next.t("migration:What to import")} style={{marginBottom: 16}} loading={replanning}>
         <Space direction="vertical" size="middle" style={{width: "100%"}}>
           <Space wrap>
-            <Checkbox checked={options.includeSkills} onChange={e => setOption("includeSkills", e.target.checked)}>{i18next.t("migration:Skills")}</Checkbox>
-            <Checkbox checked={options.includeProviders} onChange={e => setOption("includeProviders", e.target.checked)}>{i18next.t("migration:Providers")}</Checkbox>
-            <Checkbox checked={options.includeMcpServers} onChange={e => setOption("includeMcpServers", e.target.checked)}>{i18next.t("migration:MCP Servers")}</Checkbox>
-            <Checkbox checked={options.includeAgents} onChange={e => setOption("includeAgents", e.target.checked)}>{i18next.t("migration:Agents")}</Checkbox>
+            <Checkbox checked={options.includeSkills} onChange={e => setOption("includeSkills", e.target.checked)}>{i18next.t("general:Skills")}</Checkbox>
+            <Checkbox checked={options.includeProviders} onChange={e => setOption("includeProviders", e.target.checked)}>{i18next.t("general:Providers")}</Checkbox>
+            <Checkbox checked={options.includeMcpServers} onChange={e => setOption("includeMcpServers", e.target.checked)}>{i18next.t("general:MCP Servers")}</Checkbox>
+            <Checkbox checked={options.includeAgents} onChange={e => setOption("includeAgents", e.target.checked)}>{i18next.t("general:Agents")}</Checkbox>
             <Checkbox checked={options.includeChats} onChange={e => setOption("includeChats", e.target.checked)}>{i18next.t("migration:Chat history")}</Checkbox>
           </Space>
 

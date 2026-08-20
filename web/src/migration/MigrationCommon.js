@@ -22,11 +22,11 @@ export const migrationCategories = ["skill", "provider", "server", "agent", "cha
 // Each category maps onto one OpenAgent entity, and each entity has its own
 // admin page -- so an imported row can link straight to the thing it created.
 const categoryMeta = {
-  skill: {label: "migration:Skills", color: "purple", path: name => `/skills/${name}`},
-  provider: {label: "migration:Providers", color: "geekblue", path: name => `/providers/${name}`},
-  server: {label: "migration:MCP Servers", color: "cyan", path: name => `/servers/${name}`},
-  agent: {label: "migration:Agents", color: "green", path: name => `/stores/admin/${name}`},
-  chat: {label: "migration:Chats", color: "orange", path: name => `/chats/${name}`},
+  skill: {label: "general:Skills", color: "purple", path: name => `/skills/${name}`},
+  provider: {label: "general:Providers", color: "geekblue", path: name => `/providers/${name}`},
+  server: {label: "general:MCP Servers", color: "cyan", path: name => `/servers/${name}`},
+  agent: {label: "general:Agents", color: "green", path: name => `/stores/admin/${name}`},
+  chat: {label: "general:Chats", color: "orange", path: name => `/chats/${name}`},
 };
 
 export function getCategoryLabel(category) {
@@ -51,7 +51,7 @@ export function renderActionTag(action) {
   if (action === "overwrite") {
     return <Tag color="warning">{i18next.t("migration:Overwrite")}</Tag>;
   }
-  return <Tag>{i18next.t("migration:Skip")}</Tag>;
+  return <Tag>{i18next.t("general:Skip")}</Tag>;
 }
 
 // countApplicable counts what a run would actually write: rows the plan is not
