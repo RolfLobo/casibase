@@ -35,7 +35,7 @@ func GetStorageProvider(typ string, clientId string, clientSecret string, region
 	if typ == "Local File System" {
 		p, err = NewLocalFileSystemStorageProvider(clientId)
 	} else if typ == "Alibaba Cloud OSS" {
-		p, err = NewAliyunOssStorageProvider(clientId, clientSecret, region, bucket, endpoint, cdnDomain)
+		p, err = NewAliyunOssStorageProvider(clientId, clientSecret, region, bucket, endpoint, cdnDomain, providerName, lang)
 	} else {
 		p, err = NewCasdoorProvider(providerName, lang)
 	}

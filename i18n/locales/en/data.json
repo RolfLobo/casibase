@@ -194,6 +194,9 @@
   },
   "storage": {
     "Casdoor is not configured or not reachable": "Casdoor is not configured or not reachable",
+    "The bucket for the storage provider: %s should not be empty": "The bucket for the storage provider: %s should not be empty",
+    "The bucket: %s for the storage provider: %s is invalid, it should be 3 to 63 characters long and can only contain lowercase letters, digits and hyphens": "The bucket: %s for the storage provider: %s is invalid, it should be 3 to 63 characters long and can only contain lowercase letters, digits and hyphens",
+    "The endpoint and the region for the storage provider: %s should not be both empty": "The endpoint and the region for the storage provider: %s should not be both empty",
     "storage provider name: [%s] doesn't exist": "storage provider name: [%s] doesn't exist"
   },
   "store": {

@@ -194,6 +194,9 @@
   },
   "storage": {
     "Casdoor is not configured or not reachable": "Casdoor 未配置或无法连接",
+    "The bucket for the storage provider: %s should not be empty": "存储提供商：%s 的 Bucket 不能为空",
+    "The bucket: %s for the storage provider: %s is invalid, it should be 3 to 63 characters long and can only contain lowercase letters, digits and hyphens": "存储提供商：%s 的 Bucket：%s 无效，长度应为 3 到 63 个字符，且只能包含小写字母、数字和短横线",
+    "The endpoint and the region for the storage provider: %s should not be both empty": "存储提供商：%s 的 Endpoint 和 Region 不能同时为空",
     "storage provider name: [%s] doesn't exist": "存储提供商名称：[%s] 不存在"
   },
   "store": {

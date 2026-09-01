@@ -23,6 +23,7 @@ import (
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss/credentials"
+	"github.com/the-open-agent/openagent/i18n"
 )
 
 type AliyunOssStorageProvider struct {
@@ -32,7 +33,75 @@ type AliyunOssStorageProvider struct {
 	cdnDomain string
 }
 
-func NewAliyunOssStorageProvider(accessKeyId string, accessKeySecret string, region string, bucket string, endpoint string, cdnDomain string) (*AliyunOssStorageProvider, error) {
+func getOssBucket(bucket string) string {
+	bucket = strings.ToLower(strings.TrimSpace(bucket))
+	if i := strings.Index(bucket, "://"); i != -1 {
+		bucket = bucket[i+3:]
+	}
+	bucket = strings.Trim(bucket, "/")
+	if i := strings.Index(bucket, "."); i != -1 {
+		bucket = bucket[:i]
+	}
+	return bucket
+}
+
+func getOssEndpoint(endpoint string, bucket string) string {
+	endpoint = strings.ToLower(strings.TrimSpace(endpoint))
+	scheme := ""
+	if i := strings.Index(endpoint, "://"); i != -1 {
+		scheme = endpoint[:i+3]
+		endpoint = endpoint[i+3:]
+	}
+	endpoint = strings.Trim(endpoint, "/")
+	if bucket != "" {
+		endpoint = strings.TrimPrefix(endpoint, bucket+".")
+	}
+	if endpoint == "" {
+		return ""
+	}
+	return scheme + endpoint
+}
+
+func getOssRegion(endpoint string) string {
+	host := endpoint
+	if i := strings.Index(host, "://"); i != -1 {
+		host = host[i+3:]
+	}
+	host = strings.Trim(host, "/")
+	if !strings.HasSuffix(host, ".aliyuncs.com") {
+		return ""
+	}
+
+	host = strings.TrimSuffix(host, ".aliyuncs.com")
+	host = strings.TrimSuffix(host, "-internal")
+	if !strings.HasPrefix(host, "oss-") || strings.Contains(host, ".") {
+		return ""
+	}
+
+	return strings.TrimPrefix(host, "oss-")
+}
+
+func NewAliyunOssStorageProvider(accessKeyId string, accessKeySecret string, region string, bucket string, endpoint string, cdnDomain string, providerName string, lang string) (*AliyunOssStorageProvider, error) {
+	bucket = getOssBucket(bucket)
+	if bucket == "" {
+		return nil, fmt.Errorf(i18n.Translate(lang, "storage:The bucket for the storage provider: %s should not be empty"), providerName)
+	}
+	if !oss.IsValidBucketName(oss.Ptr(bucket)) {
+		return nil, fmt.Errorf(i18n.Translate(lang, "storage:The bucket: %s for the storage provider: %s is invalid, it should be 3 to 63 characters long and can only contain lowercase letters, digits and hyphens"), bucket, providerName)
+	}
+
+	endpoint = getOssEndpoint(endpoint, bucket)
+	region = strings.ToLower(strings.TrimSpace(region))
+	if region == "" {
+		region = getOssRegion(endpoint)
+	}
+	if endpoint == "" && region == "" {
+		return nil, fmt.Errorf(i18n.Translate(lang, "storage:The endpoint and the region for the storage provider: %s should not be both empty"), providerName)
+	}
+	if endpoint == "" {
+		endpoint = fmt.Sprintf("oss-%s.aliyuncs.com", region)
+	}
+
 	cfg := oss.LoadDefaultConfig().
 		WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyId, accessKeySecret, "")).
 		WithRegion(region).
