@@ -31,13 +31,13 @@ func getChatMessagesFromMessages(chat string, messages []*Message) []*Message {
 	return res
 }
 
-func deleteChatAndMessages(chat string) error {
-	_, err := DeleteChat(&Chat{Owner: "admin", Name: chat})
+func deleteChatAndMessages(chat *Chat) error {
+	_, err := DeleteChat(&Chat{Owner: chat.Owner, Name: chat.Name})
 	if err != nil {
 		return err
 	}
 
-	_, err = DeleteMessagesByChat(&Message{Owner: "admin", Chat: chat})
+	_, err = DeleteMessagesByChat(&Message{Owner: chat.Owner, Chat: chat.Name})
 	if err != nil {
 		return err
 	}
@@ -81,6 +81,13 @@ func cleanupChats() error {
 
 	i := 1
 	for _, chat := range chats {
+		// A chat with an empty owner or name cannot be addressed by its primary key,
+		// so deleting it would loop forever and its empty conditions are unsafe.
+		if chat.Owner == "" || chat.Name == "" {
+			logs.Warning("cleanupChats() skipped a chat with empty owner or name: owner = [%s], name = [%s], clientIp = [%s], userAgent = [%s]", chat.Owner, chat.Name, chat.ClientIp, chat.UserAgent)
+			continue
+		}
+
 		needDelete := false
 		chatMessages := getChatMessagesFromMessages(chat.Name, messages)
 		if chat.MessageCount == 0 || len(chatMessages) == 0 {
@@ -96,7 +103,7 @@ func cleanupChats() error {
 		}
 
 		if needDelete {
-			err = deleteChatAndMessages(chat.Name)
+			err = deleteChatAndMessages(chat)
 			if err != nil {
 				return err
 			}

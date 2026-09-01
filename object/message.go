@@ -404,7 +404,13 @@ func DeleteAllLaterMessages(messageId string) error {
 }
 
 func DeleteMessagesByChat(message *Message) (bool, error) {
-	affected, err := adapter.engine.Delete(&Message{Owner: message.Owner, Chat: message.Chat})
+	// Guard against empty conditions: xorm silently drops zero-value fields from
+	// the WHERE clause, so an empty chat would delete every message of the owner.
+	if message.Owner == "" || message.Chat == "" {
+		return false, fmt.Errorf("DeleteMessagesByChat() error: owner and chat cannot be empty")
+	}
+
+	affected, err := adapter.engine.Where("owner = ? AND chat = ?", message.Owner, message.Chat).Delete(&Message{})
 	if err != nil {
 		return false, err
 	}
