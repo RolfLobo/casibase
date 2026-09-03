@@ -122,12 +122,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Convert release to draft
-        if: steps.semantic.outputs.new_release_published == 'true'
-        run: gh release edit "v${{ steps.semantic.outputs.new_release_version }}" --draft=true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
   github-release:
     name: GitHub Release
     runs-on: ubuntu-latest
@@ -167,7 +161,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish release
-        run: gh release edit "v${{ needs.tag-release.outputs.new-release-version }}" --draft=false
+        run: |
+          TAG="v${{ needs.tag-release.outputs.new-release-version }}"
+          # A draft release isn't attached to its tag yet, so "gh release edit <tag>"
+          # (which resolves by tag) can't find it. List releases instead — that
+          # endpoint includes drafts — and match by tag_name to get the real id.
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases" --paginate --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -n1)
+          if [ -z "$RELEASE_ID" ]; then
+            echo "::error::Could not find a release for tag $TAG"
+            exit 1
+          fi
+          gh api -X PATCH "repos/${{ github.repository }}/releases/$RELEASE_ID" -f draft=false
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

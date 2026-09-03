@@ -51,6 +51,9 @@ upx:
     compress: "9"
     lzma: true
 
+release:
+  draft: true
+
 changelog:
   sort: asc
   filters:
