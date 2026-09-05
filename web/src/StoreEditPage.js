@@ -972,6 +972,32 @@ class StoreEditPage extends React.Component {
               },
               8
             )}
+            {this.renderStoreSwitch(
+              Setting.getLabel(i18next.t("store:Enable experience library"), i18next.t("store:Enable experience library - Tooltip")),
+              store.enableExperienceLibrary,
+              checked => {
+                this.updateStoreField("enableExperienceLibrary", checked);
+              },
+              8
+            )}
+            {store.enableExperienceLibrary ? (
+              <>
+                {this.renderStoreField(
+                  Setting.getLabel(i18next.t("store:Experience count"), i18next.t("store:Experience count - Tooltip")),
+                  <InputNumber style={{width: "100%"}} min={0} max={20} value={store.experienceCount} onChange={value => {
+                    this.updateStoreField("experienceCount", value);
+                  }} />,
+                  8
+                )}
+                {this.renderStoreField(
+                  Setting.getLabel(i18next.t("store:Experience threshold"), i18next.t("store:Experience threshold - Tooltip")),
+                  <InputNumber style={{width: "100%"}} min={0} max={1} step={0.05} value={store.experienceThreshold} onChange={value => {
+                    this.updateStoreField("experienceThreshold", value);
+                  }} />,
+                  8
+                )}
+              </>
+            ) : null}
           </Row>
         </Card>
 

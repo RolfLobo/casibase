@@ -418,6 +418,11 @@ func (a *Adapter) createTable() {
 		panic(err)
 	}
 
+	err = a.engine.Sync2(new(Experience))
+	if err != nil {
+		panic(err)
+	}
+
 	err = a.engine.Sync2(new(StoreVisit))
 	if err != nil {
 		panic(err)

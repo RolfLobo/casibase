@@ -57,6 +57,9 @@
     "transaction failed to be mined: %v": "交易挖矿失败：%v",
     "transaction failed with status: %d, reason: %s": "交易失败，状态码：%d，原因：%s"
   },
+  "chat": {
+    "Searching experience library": "正在检索经验库"
+  },
   "comment": {
     "Comment content cannot be longer than %d characters": "评论内容不能超过%d个字符"
   },
@@ -92,6 +95,14 @@
     "request failed with status code %d: %s": "请求失败，状态码：%d，错误信息：%s",
     "text can not be empty.": "文本不能为空。",
     "text cannot be empty": "文本不能为空"
+  },
+  "experience": {
+    "Failed to save the experience": "保存经验失败",
+    "Only an AI answer can be corrected": "只能校准 AI 的回答",
+    "The corrected answer should not be empty": "校准后的回答不能为空",
+    "The experience is not found": "未找到该经验",
+    "The message is not found": "未找到该消息",
+    "The question should not be empty": "问题不能为空"
   },
   "general": {
     "Failed to update": "更新失败",

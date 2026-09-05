@@ -18,6 +18,7 @@ import {
   CopyOutlined,
   DislikeFilled,
   DislikeOutlined,
+  HighlightOutlined,
   LikeFilled,
   LikeOutlined,
   LoadingOutlined,
@@ -53,6 +54,8 @@ const MessageActions = ({
   setIsRegenerating,
   isRegenerating,
   hideInput,
+  canCorrect,
+  onCorrect,
 }) => {
   const isCurrentMessageBeingRead = readingMessage === message.name;
   const isCurrentMessageBeingLoaded = isLoadingTTS && isCurrentMessageBeingRead;
@@ -121,6 +124,17 @@ const MessageActions = ({
           disabled={isCurrentMessageBeingLoaded}
         />
       </Tooltip>
+
+      {canCorrect && (
+        <Tooltip title={i18next.t("experience:Correct this answer")} arrow={false}>
+          <Button
+            icon={<HighlightOutlined />}
+            color="primary"
+            variant="text"
+            onClick={onCorrect}
+          />
+        </Tooltip>
+      )}
 
       {!hideInput && isLastMessage && (
         <Tooltip title={i18next.t("general:Regenerate")} arrow={false}>

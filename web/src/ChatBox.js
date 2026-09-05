@@ -24,6 +24,7 @@ import ChatInput from "./chat/ChatInput";
 import WelcomeHeader from "./chat/WelcomeHeader";
 import VirtualFigure from "./chat/VirtualFigure";
 import * as MessageBackend from "./backend/MessageBackend";
+import * as ExperienceBackend from "./backend/ExperienceBackend";
 import TtsHelper from "./TextToSpeech";
 import SpeechToTextHelper from "./SpeechToText";
 
@@ -239,7 +240,7 @@ class ChatBox extends React.Component {
     }
 
     const tempElement = document.createElement("div");
-    tempElement.innerHTML = message.text || message;
+    tempElement.innerHTML = message.correctedText || message.text || message;
     const text = tempElement.innerText;
     if (text) {
       parts.push(text);
@@ -281,6 +282,77 @@ class ChatBox extends React.Component {
         Setting.showMessage("error", result.msg);
       }
     });
+  };
+
+  // The message object is shared with the parent's list, so updating it in place and
+  // re-rendering is enough; MessageItem prefers correctedText over the cached html.
+  refreshCorrectedMessage = (message, correctedText) => {
+    message.correctedText = correctedText;
+    this.setState({messages: (this.state.messages || this.props.messages || []).map(m => m.name === message.name ? message : m)});
+  };
+
+  // Saving a correction both rewrites what this message shows and files the change in
+  // the experience library, so later answers can learn from it.
+  handleSaveCorrection = (message, payload) => {
+    return ExperienceBackend.addExperience({
+      owner: "admin",
+      store: this.props.store?.name,
+      chat: message.chat,
+      message: message.name,
+      question: "",
+      correctedText: payload.correctedText,
+      reason: payload.reason,
+      category: payload.category,
+      rule: payload.rule,
+      isGlobalRule: payload.isGlobalRule,
+    })
+      .then((res) => {
+        if (res.status !== "ok") {
+          Setting.showMessage("error", `${i18next.t("general:Failed to save")}: ${res.msg}`);
+          return false;
+        }
+
+        this.refreshCorrectedMessage(message, payload.correctedText);
+        if (res.data?.state === "Draft") {
+          Setting.showMessage("success", i18next.t("experience:Saved, waiting for review before it affects new answers"));
+        } else {
+          Setting.showMessage("success", i18next.t("experience:Saved to the experience library"));
+        }
+        return true;
+      })
+      .catch(error => {
+        Setting.showMessage("error", `${i18next.t("general:Failed to connect to server")}: ${error}`);
+        return false;
+      });
+  };
+
+  handleRevertCorrection = (message) => {
+    ExperienceBackend.getMessageExperience(message.name)
+      .then((res) => {
+        if (res.status !== "ok") {
+          Setting.showMessage("error", `${i18next.t("general:Failed to get")}: ${res.msg}`);
+          return;
+        }
+
+        const experience = res.data;
+        if (!experience) {
+          Setting.showMessage("error", i18next.t("experience:The experience is not found"));
+          return;
+        }
+
+        ExperienceBackend.deleteExperience(experience)
+          .then((deleteRes) => {
+            if (deleteRes.status === "ok") {
+              this.refreshCorrectedMessage(message, "");
+              Setting.showMessage("success", i18next.t("experience:Correction reverted"));
+            } else {
+              Setting.showMessage("error", `${i18next.t("general:Failed to delete")}: ${deleteRes.msg}`);
+            }
+          });
+      })
+      .catch(error => {
+        Setting.showMessage("error", `${i18next.t("general:Failed to connect to server")}: ${error}`);
+      });
   };
 
   toggleMessageReadState = (message) => {
@@ -455,6 +527,8 @@ class ChatBox extends React.Component {
             onCopyMessage={this.copyMessageFromHTML}
             onToggleRead={this.toggleMessageReadState}
             onEditMessage={this.handleEditMessage}
+            onSaveCorrection={this.handleSaveCorrection}
+            onRevertCorrection={this.handleRevertCorrection}
             hideInput={this.props.hideInput}
             disableInput={this.props.disableInput}
             isGenerating={this.props.loading}

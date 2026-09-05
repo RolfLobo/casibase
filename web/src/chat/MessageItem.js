@@ -24,6 +24,7 @@ import {renderText} from "../ChatMessageRender";
 import MessageActions, {CopyButton} from "./MessageActions";
 import MessageSuggestions from "./MessageSuggestions";
 import MessageEdit from "./MessageEdit";
+import {CorrectionBanner, CorrectionEditor} from "./MessageCorrection";
 import {MessageCarrier} from "./MessageCarrier";
 import SearchSourcesDrawer from "./SearchSourcesDrawer";
 import KnowledgeSourcesDrawer from "./KnowledgeSourcesDrawer";
@@ -44,6 +45,9 @@ const MessageItem = ({
   onLike,
   onToggleRead,
   onEditMessage,
+  onSaveCorrection,
+  onRevertCorrection,
+  store,
   disableInput,
   hideInput,
   isReading,
@@ -58,7 +62,18 @@ const MessageItem = ({
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [searchDrawerVisible, setSearchDrawerVisible] = useState(false);
   const [knowledgeDrawerVisible, setKnowledgeDrawerVisible] = useState(false);
+  const [isCorrecting, setIsCorrecting] = useState(false);
   const themeColor = Setting.getThemeColor();
+
+  // The answer shown to the reader, and replayed as history, is the human-corrected
+  // one when it exists; message.text always keeps the model's original output.
+  const displayText = message.correctedText || message.text;
+  const isCorrected = !!message.correctedText;
+  // Only a curator may publish a correction as a standing rule; everyone else's
+  // corrections are queued for review by the backend.
+  const isCurator = Setting.isAdminUser(account) || (store?.owners || []).includes(account?.name);
+  const canCorrect = !!onSaveCorrection && !hideInput && !message.isReadOnly &&
+    message.author === "AI" && !!message.text && !isGenerating;
 
   const mergedSearchResults = useMemo(() => {
     const merged = [...(message.searchResults || [])];
@@ -287,7 +302,7 @@ const MessageItem = ({
 
           <div className="message-answer">
             <GeneratedResourceList resources={generatedResources} />
-            {message.html || renderText(message.text)}
+            {isCorrected ? renderText(displayText) : (message.html || renderText(message.text))}
           </div>
         </div>
       );
@@ -295,7 +310,11 @@ const MessageItem = ({
 
     if (isLastMessage && message.author === "AI" && message.TokenCount === 0) {
       const mssageCarrier = new MessageCarrier(false); // we only use final answer blow so no need to parse title
-      return renderText(mssageCarrier.parseAnswerWithCarriers(message.text).finalAnswer);
+      return renderText(mssageCarrier.parseAnswerWithCarriers(displayText).finalAnswer);
+    }
+
+    if (isCorrected) {
+      return renderText(displayText);
     }
 
     return message.html;
@@ -348,6 +367,23 @@ const MessageItem = ({
       return renderEditForm();
     }
 
+    if (isCorrecting) {
+      return (
+        <CorrectionEditor
+          message={message}
+          isDark={isDark}
+          canSetGlobalRule={isCurator}
+          onCancel={() => setIsCorrecting(false)}
+          onSave={(payload) => Promise.resolve(onSaveCorrection(message, payload))
+            .then((saved) => {
+              if (saved !== false) {
+                setIsCorrecting(false);
+              }
+            })}
+        />
+      );
+    }
+
     return (
       <div style={{
         display: "flex",
@@ -378,6 +414,14 @@ const MessageItem = ({
                 isGenerating={isGenerating}
                 themeColor={themeColor}
               />
+              {isCorrected && (
+                <CorrectionBanner
+                  message={message}
+                  isDark={isDark}
+                  canRevert={!!onRevertCorrection && !hideInput && !message.isReadOnly}
+                  onRevert={() => onRevertCorrection(message)}
+                />
+              )}
               {renderMessageContent()}
             </div>
           }
@@ -401,6 +445,8 @@ const MessageItem = ({
                     setIsRegenerating={setIsRegenerating}
                     isRegenerating={isRegenerating}
                     hideInput={hideInput}
+                    canCorrect={canCorrect}
+                    onCorrect={() => setIsCorrecting(true)}
                   />
                   {mergedSearchResults.length > 0 && (
                     <Button

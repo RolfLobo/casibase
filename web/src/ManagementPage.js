@@ -28,6 +28,7 @@ import {
   FolderOpenOutlined,
   FormOutlined,
   FundOutlined,
+  HighlightOutlined,
   HistoryOutlined,
   HomeOutlined,
   ImportOutlined,
@@ -73,6 +74,8 @@ import ProviderListPage from "./ProviderListPage";
 import ProviderEditPage from "./ProviderEditPage";
 import PipeListPage from "./PipeListPage";
 import PipeEditPage from "./PipeEditPage";
+import ExperienceListPage from "./ExperienceListPage";
+import ExperienceEditPage from "./ExperienceEditPage";
 import SkillListPage from "./SkillListPage";
 import SkillEditPage from "./SkillEditPage";
 import ToolListPage from "./ToolListPage";
@@ -476,6 +479,7 @@ function ManagementPage(props) {
       res.push(Setting.getItem(<Link style={{color: textColor}} to="/files">{i18next.t("general:Knowledge Base")}</Link>, "/knowledge-base", <DatabaseOutlined />, [
         Setting.getItem(<Link to="/files">{i18next.t("general:Files")}</Link>, "/files", <FolderOpenOutlined />),
         Setting.getItem(<Link to="/vectors">{i18next.t("general:Vectors")}</Link>, "/vectors", <ApartmentOutlined />),
+        Setting.getItem(<Link to="/experiences">{i18next.t("general:Experiences")}</Link>, "/experiences", <HighlightOutlined />),
       ]));
 
       res.push(Setting.getItem(<Link style={{color: textColor}} to="/providers">{i18next.t("general:Connectors")}</Link>, "/connectors", <ApiOutlined />, [
@@ -608,6 +612,8 @@ function ManagementPage(props) {
         <Route exact path="/files" render={(props) => renderSigninIfNotSignedIn(<FileListPage account={account} {...props} />)} />
         <Route exact path="/vectors" render={(props) => renderSigninIfNotSignedIn(<VectorListPage account={account} {...props} />)} />
         <Route exact path="/vectors/:vectorName" render={(props) => renderSigninIfNotSignedIn(<VectorEditPage account={account} {...props} />)} />
+        <Route exact path="/experiences" render={(props) => renderSigninIfNotSignedIn(<ExperienceListPage account={account} {...props} />)} />
+        <Route exact path="/experiences/:experienceName" render={(props) => renderSigninIfNotSignedIn(<ExperienceEditPage account={account} {...props} />)} />
         <Route exact path="/chats" render={(props) => renderSigninIfNotSignedIn(<ChatListPage account={account} {...props} />)} />
         <Route exact path="/chats/:chatName" render={(props) => renderSigninIfNotSignedIn(<ChatEditPage account={account} {...props} />)} />
         <Route exact path="/messages" render={(props) => renderSigninIfNotSignedIn(<MessageListPage account={account} {...props} />)} />

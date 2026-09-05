@@ -49,6 +49,7 @@ type Message struct {
 	ReplyTo           string               `xorm:"varchar(100) index" json:"replyTo"`
 	Author            string               `xorm:"varchar(100)" json:"author"`
 	Text              string               `xorm:"mediumtext" json:"text"`
+	CorrectedText     string               `xorm:"mediumtext" json:"correctedText"`
 	ReasonText        string               `xorm:"mediumtext" json:"reasonText"`
 	ErrorText         string               `xorm:"mediumtext" json:"errorText"`
 	FileName          string               `xorm:"varchar(100)" json:"fileName"`
@@ -75,6 +76,17 @@ type Message struct {
 
 	TransactionId string `xorm:"varchar(100)" json:"transactionId"`
 	IsReadOnly    bool   `xorm:"-" json:"isReadOnly"`
+}
+
+// GetDisplayText returns the answer that should be shown to users and fed back into
+// the model as history: the human-corrected text when the message was calibrated,
+// otherwise the model's original output. Text always keeps the original so the
+// correction stays reviewable and revertible.
+func (message *Message) GetDisplayText() string {
+	if message.CorrectedText != "" {
+		return message.CorrectedText
+	}
+	return message.Text
 }
 
 const messageReadOnlyChatBatchSize = 500
@@ -248,6 +260,18 @@ func UpdateMessage(id string, message *Message, isHitOnly bool) (bool, error) {
 	}
 
 	return true, nil
+}
+
+// UpdateMessageCorrectedText stores (or clears, with an empty string) the human-corrected
+// answer of a message without touching any other column, so a correction never races with
+// the columns written by the answer stream.
+func UpdateMessageCorrectedText(owner string, name string, correctedText string) (bool, error) {
+	message := Message{CorrectedText: correctedText}
+	affected, err := adapter.engine.ID(core.PK{owner, name}).Cols("corrected_text").Update(&message)
+	if err != nil {
+		return false, err
+	}
+	return affected != 0, nil
 }
 
 // dataURLMimeType returns e.g. "image/png" from "data:image/png;base64,AAAA...".
@@ -435,17 +459,20 @@ func GetRecentRawMessages(chat string, createdTime string, memoryLimit int) ([]*
 	}
 
 	for _, message := range messages {
+		// Feed the human-corrected answer back as history so later turns build on the
+		// calibrated version instead of continuing from the model's mistake.
+		text := message.GetDisplayText()
 		rawTextTokenCount := message.TextTokenCount
-		if rawTextTokenCount == 0 {
-			rawTextTokenCount, err = getMessageTextTokenCount(message.ModelProvider, message.Text)
+		if rawTextTokenCount == 0 || text != message.Text {
+			rawTextTokenCount, err = getMessageTextTokenCount(message.ModelProvider, text)
 			if err != nil {
 				return nil, err
 			}
 		}
 		rawMessage := &model.RawMessage{
-			Text:           message.Text,
+			Text:           text,
 			Author:         message.Author,
-			TextTokenCount: message.TextTokenCount,
+			TextTokenCount: rawTextTokenCount,
 		}
 		res = append(res, rawMessage)
 	}

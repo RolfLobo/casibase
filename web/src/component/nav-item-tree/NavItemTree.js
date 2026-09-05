@@ -43,6 +43,7 @@ export const NavItemTree = ({disabled, casdoorAvailable, checkedKeys, defaultExp
           children: [
             {title: i18next.t("general:Files"), key: "/files"},
             {title: i18next.t("general:Vectors"), key: "/vectors"},
+            {title: i18next.t("general:Experiences"), key: "/experiences"},
           ],
         },
         {

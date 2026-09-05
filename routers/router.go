@@ -206,6 +206,14 @@ func initAPI() {
 	beego.Router("/api/delete-message", &controllers.ApiController{}, "POST:DeleteMessage")
 	beego.Router("/api/delete-welcome-message", &controllers.ApiController{}, "POST:DeleteWelcomeMessage")
 
+	beego.Router("/api/get-global-experiences", &controllers.ApiController{}, "GET:GetGlobalExperiences")
+	beego.Router("/api/get-experiences", &controllers.ApiController{}, "GET:GetExperiences")
+	beego.Router("/api/get-experience", &controllers.ApiController{}, "GET:GetExperience")
+	beego.Router("/api/get-message-experience", &controllers.ApiController{}, "GET:GetMessageExperience")
+	beego.Router("/api/update-experience", &controllers.ApiController{}, "POST:UpdateExperience")
+	beego.Router("/api/add-experience", &controllers.ApiController{}, "POST:AddExperience")
+	beego.Router("/api/delete-experience", &controllers.ApiController{}, "POST:DeleteExperience")
+
 	beego.Router("/api/get-usages", &controllers.ApiController{}, "GET:GetUsages")
 	beego.Router("/api/get-range-usages", &controllers.ApiController{}, "GET:GetRangeUsages")
 	beego.Router("/api/get-users", &controllers.ApiController{}, "GET:GetUsers")

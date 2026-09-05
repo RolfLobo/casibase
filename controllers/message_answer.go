@@ -356,6 +356,21 @@ func generateMessageAnswer(id string, responseWriter http.ResponseWriter, host s
 		}
 	}
 
+	// The experience library holds human corrections of this agent's earlier answers.
+	// It is appended to the prompt (like the skills catalog) rather than mixed into the
+	// knowledge list, so it can outrank the knowledge it contradicts.
+	var experienceNames []string
+	if store.EnableExperienceLibrary {
+		emitStatus(i18n.Translate(lang, "chat:Searching experience library"))
+		experienceContent, names, expErr := object.GetExperienceCatalog(store, question, embeddingProvider, embeddingProviderObj, lang)
+		if expErr != nil {
+			fmt.Printf("experience library: %s\n", expErr.Error())
+		} else if experienceContent != "" {
+			store.Prompt += "\n\n" + experienceContent
+			experienceNames = names
+		}
+	}
+
 	writer := &RefinedWriter{context.Response{ResponseWriter: responseWriter}, *NewCleaner(6), []byte{}, []byte{}, []byte{}, []byte{}, []byte{}}
 
 	if questionMessage != nil {
@@ -582,6 +597,8 @@ func generateMessageAnswer(id string, responseWriter http.ResponseWriter, host s
 			return
 		}
 	}
+
+	object.IncreaseExperienceHitCounts(store.Owner, experienceNames)
 
 	object.StartExperienceReview(object.ExperienceReviewRequest{
 		Store:             store,

@@ -57,6 +57,9 @@
     "transaction failed to be mined: %v": "transaction failed to be mined: %v",
     "transaction failed with status: %d, reason: %s": "transaction failed with status: %d, reason: %s"
   },
+  "chat": {
+    "Searching experience library": "Searching experience library"
+  },
   "comment": {
     "Comment content cannot be longer than %d characters": "Comment content cannot be longer than %d characters"
   },
@@ -92,6 +95,14 @@
     "request failed with status code %d: %s": "request failed with status code %d: %s",
     "text can not be empty.": "text can not be empty.",
     "text cannot be empty": "text cannot be empty"
+  },
+  "experience": {
+    "Failed to save the experience": "Failed to save the experience",
+    "Only an AI answer can be corrected": "Only an AI answer can be corrected",
+    "The corrected answer should not be empty": "The corrected answer should not be empty",
+    "The experience is not found": "The experience is not found",
+    "The message is not found": "The message is not found",
+    "The question should not be empty": "The question should not be empty"
   },
   "general": {
     "Failed to update": "Failed to update",

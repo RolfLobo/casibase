@@ -470,7 +470,7 @@ class ChatPage extends BaseListPage {
     MessageBackend.getChatMessages("admin", chat.name)
       .then((res) => {
         res.data.map((message) => {
-          message.html = renderText(message.text);
+          message.html = renderText(message.correctedText || message.text);
         });
         this.setState({
           messages: res.data,
@@ -536,9 +536,9 @@ class ChatPage extends BaseListPage {
               res.data[res.data.length - 1] = lastMessage2;
               res.data.map((message, index) => {
                 if (index === res.data.length - 1 && message.author === "AI") {
-                  message.html = renderText(message.text);
+                  message.html = renderText(message.correctedText || message.text);
                 } else {
-                  message.html = renderText(message.text);
+                  message.html = renderText(message.correctedText || message.text);
                 }
               });
               this.setState({
@@ -632,7 +632,7 @@ class ChatPage extends BaseListPage {
               res.data[res.data.length - 1] = lastMessage2;
 
               res.data.map((message) => {
-                message.html = renderText(message.text);
+                message.html = renderText(message.correctedText || message.text);
               });
 
               this.setState({
@@ -696,7 +696,7 @@ class ChatPage extends BaseListPage {
               res.data[res.data.length - 1] = lastMessage2;
               res.data.map((message, index) => {
                 // Ensure the main HTML is rendered properly
-                message.html = renderText(message.text);
+                message.html = renderText(message.correctedText || message.text);
 
                 // Make sure the reason HTML is still there if we have reason text
                 if (message.reasonText) {
