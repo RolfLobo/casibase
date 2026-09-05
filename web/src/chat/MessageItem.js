@@ -72,7 +72,9 @@ const MessageItem = ({
   // Only a curator may publish a correction as a standing rule; everyone else's
   // corrections are queued for review by the backend.
   const isCurator = Setting.isAdminUser(account) || (store?.owners || []).includes(account?.name);
-  const canCorrect = !!onSaveCorrection && !hideInput && !message.isReadOnly &&
+  // Saving a correction requires a signed-in user, so anonymous readers never see the
+  // button rather than hitting an auth error after rewriting an answer.
+  const canCorrect = !!onSaveCorrection && !!account?.name && !hideInput && !message.isReadOnly &&
     message.author === "AI" && !!message.text && !isGenerating;
 
   const mergedSearchResults = useMemo(() => {
