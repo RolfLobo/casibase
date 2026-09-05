@@ -193,17 +193,17 @@ class ExperienceEditPage extends React.Component {
         <Card size="small" title={renderCardTitle(i18next.t("experience:How it is used"), i18next.t("experience:How it is used desc"))} style={sectionCardStyle} headStyle={cardHeadStyle}>
           <Row gutter={rowGutter}>
             {this.renderExperienceField(
-              i18next.t("experience:Category"),
+              i18next.t("general:Category"),
               <Select style={{width: "100%"}} value={experience.category} onChange={value => {
                 this.updateExperienceField("category", value);
-              }} options={EXPERIENCE_CATEGORIES.map(item => ({value: item, label: i18next.t(`experience:${item}`)}))} />,
+              }} options={EXPERIENCE_CATEGORIES.map(item => ({value: item, label: i18next.t(`experience:Category - ${item}`)}))} />,
               8
             )}
             {this.renderExperienceField(
               i18next.t("general:State"),
               <Select style={{width: "100%"}} value={experience.state} onChange={value => {
                 this.updateExperienceField("state", value);
-              }} options={EXPERIENCE_STATES.map(item => ({value: item, label: i18next.t(`experience:${item}`)}))} />,
+              }} options={EXPERIENCE_STATES.map(item => ({value: item, label: i18next.t(`experience:State - ${item}`)}))} />,
               8
             )}
             {this.renderExperienceField(
@@ -228,7 +228,7 @@ class ExperienceEditPage extends React.Component {
           </Row>
         </Card>
 
-        <Card size="small" title={renderCardTitle(i18next.t("experience:Source"), i18next.t("experience:Source desc"))} style={sectionCardStyle} headStyle={cardHeadStyle}>
+        <Card size="small" title={renderCardTitle(i18next.t("experience:Source - title"), i18next.t("experience:Source desc"))} style={sectionCardStyle} headStyle={cardHeadStyle}>
           <Row gutter={rowGutter}>
             {this.renderExperienceField(
               i18next.t("general:Name"),
@@ -236,13 +236,13 @@ class ExperienceEditPage extends React.Component {
               8
             )}
             {this.renderExperienceField(
-              Setting.getLabel(i18next.t("general:Store"), i18next.t("experience:Store - Tooltip")),
+              Setting.getLabel(i18next.t("general:Store"), i18next.t("experience:Experience store - Tooltip")),
               <Select
                 virtual={false}
                 showSearch
                 style={{width: "100%"}}
                 value={experience.store || undefined}
-                placeholder={i18next.t("experience:Store - Tooltip")}
+                placeholder={i18next.t("experience:Experience store - Tooltip")}
                 onChange={value => {
                   this.updateExperienceField("store", value);
                 }}

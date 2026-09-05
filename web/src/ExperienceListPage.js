@@ -157,14 +157,14 @@ class ExperienceListPage extends BaseListPage {
         ),
       },
       {
-        title: i18next.t("experience:Category"),
+        title: i18next.t("general:Category"),
         dataIndex: "category",
         key: "category",
         width: "110px",
         filterMultiple: false,
-        filters: EXPERIENCE_CATEGORIES.map((item) => ({text: i18next.t(`experience:${item}`), value: item})),
+        filters: EXPERIENCE_CATEGORIES.map((item) => ({text: i18next.t(`experience:Category - ${item}`), value: item})),
         onFilter: (value, record) => record.category === value,
-        render: (text) => text ? <Tag>{i18next.t(`experience:${text}`)}</Tag> : null,
+        render: (text) => text ? <Tag>{i18next.t(`experience:Category - ${text}`)}</Tag> : null,
       },
       {
         title: i18next.t("experience:Standing rule"),
@@ -186,7 +186,7 @@ class ExperienceListPage extends BaseListPage {
         key: "state",
         width: "130px",
         filterMultiple: false,
-        filters: EXPERIENCE_STATES.map((item) => ({text: i18next.t(`experience:${item}`), value: item})),
+        filters: EXPERIENCE_STATES.map((item) => ({text: i18next.t(`experience:State - ${item}`), value: item})),
         onFilter: (value, record) => record.state === value,
         render: (text, record) => (
           <Select
@@ -194,7 +194,7 @@ class ExperienceListPage extends BaseListPage {
             style={{width: "100%"}}
             value={text}
             onChange={(value) => this.updateExperienceState(record, value)}
-            options={EXPERIENCE_STATES.map((item) => ({value: item, label: i18next.t(`experience:${item}`)}))}
+            options={EXPERIENCE_STATES.map((item) => ({value: item, label: i18next.t(`experience:State - ${item}`)}))}
           />
         ),
       },

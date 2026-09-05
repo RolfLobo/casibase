@@ -92,7 +92,7 @@ export const CorrectionEditor = ({message, isDark, canSetGlobalRule, onSave, onC
           style={{width: "140px"}}
           options={CORRECTION_CATEGORIES.map(item => ({
             value: item,
-            label: i18next.t(`experience:${item}`),
+            label: i18next.t(`experience:Category - ${item}`),
           }))}
         />
         <Input
