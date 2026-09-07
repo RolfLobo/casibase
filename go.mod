@@ -34,7 +34,6 @@ require (
 	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/henomis/lingoose v0.1.0
 	github.com/hupe1980/go-huggingface v0.0.15
-	github.com/leverly/ChatGLM v1.2.0
 	github.com/lib/pq v1.10.2
 	github.com/openai/openai-go/v2 v2.1.1
 	github.com/oschwald/geoip2-golang v1.11.0
@@ -133,7 +132,6 @@ require (
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dlclark/regexp2 v1.10.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

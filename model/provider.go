@@ -142,7 +142,7 @@ func GetModelProvider(typ string, subType string, clientId string, clientSecret 
 	} else if typ == "iFlytek" {
 		p, err = NewiFlytekModelProvider(subType, clientSecret, temperature)
 	} else if typ == "ChatGLM" {
-		p, err = NewChatGLMModelProvider(subType, clientSecret)
+		p, err = NewChatGLMModelProvider(subType, clientSecret, temperature, topP)
 	} else if typ == "MiniMax" {
 		p, err = NewMiniMaxModelProvider(subType, clientId, clientSecret, temperature)
 	} else if typ == "Cohere" {

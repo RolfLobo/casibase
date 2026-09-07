@@ -945,9 +945,35 @@ export function getModelSubTypeOptions(type) {
     ];
   } else if (type === "ChatGLM") {
     return [
-      {id: "glm-3-turbo", name: "glm-3-turbo"},
-      {id: "glm-4", name: "glm-4"},
-      {id: "glm-4V", name: "glm-4V"},
+      // GLM-5 series
+      {id: "glm-5.3", name: "glm-5.3"},
+      {id: "glm-5.2", name: "glm-5.2"},
+      {id: "glm-5.1", name: "glm-5.1"},
+      {id: "glm-5", name: "glm-5"},
+      {id: "glm-5-turbo", name: "glm-5-turbo"},
+      // GLM-4 series
+      {id: "glm-4.7", name: "glm-4.7"},
+      {id: "glm-4.7-flashx", name: "glm-4.7-flashx"},
+      {id: "glm-4.7-flash", name: "glm-4.7-flash"},
+      {id: "glm-4.5-air", name: "glm-4.5-air"},
+      {id: "glm-4.5-flash", name: "glm-4.5-flash"},
+      {id: "glm-4-plus", name: "glm-4-plus"},
+      {id: "glm-4-airx", name: "glm-4-airx"},
+      {id: "glm-4-air", name: "glm-4-air"},
+      {id: "glm-4-long", name: "glm-4-long"},
+      {id: "glm-4-flashx-250414", name: "glm-4-flashx-250414"},
+      {id: "glm-4-flash-250414", name: "glm-4-flash-250414"},
+      // Vision models
+      {id: "glm-5.3-flash", name: "glm-5.3-flash"},
+      {id: "glm-5v-turbo", name: "glm-5v-turbo"},
+      {id: "glm-4.6v", name: "glm-4.6v"},
+      {id: "glm-4.6v-flashx", name: "glm-4.6v-flashx"},
+      {id: "glm-4.6v-flash", name: "glm-4.6v-flash"},
+      {id: "glm-4.5v", name: "glm-4.5v"},
+      {id: "glm-4.1v-thinking-flashx", name: "glm-4.1v-thinking-flashx"},
+      {id: "glm-4.1v-thinking-flash", name: "glm-4.1v-thinking-flash"},
+      {id: "glm-4v-plus-0111", name: "glm-4v-plus-0111"},
+      {id: "glm-4v-flash", name: "glm-4v-flash"},
     ];
   } else if (type === "MiniMax") {
     return [
@@ -1384,7 +1410,7 @@ export function getModelProviderMetadata(type) {
     "Amazon Bedrock": {desc: "Claude, Llama on AWS", needsApiKey: true, needsUrl: false, needsClientId: true, needsRegion: true, defaultSubType: "claude"},
     "Hugging Face": {desc: "Llama, Falcon, open models", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "meta-llama/Llama-2-7b"},
     "iFlytek": {desc: "Spark X2, Spark Max...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "spark-x2"},
-    "ChatGLM": {desc: "GLM-4, ChatGLM...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "glm-4"},
+    "ChatGLM": {desc: "GLM-5.3, GLM-4.7...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "glm-5.3"},
     "Cohere": {desc: "Command, Command Light", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "command"},
     "Baichuan": {desc: "Baichuan4, Baichuan3...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "Baichuan4-Turbo"},
     "StepFun": {desc: "Step-2, Step-1...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "step-2-16k"},

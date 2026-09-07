@@ -266,13 +266,18 @@ func getContextLength(typ string) int {
 	} else if strings.Contains(typ, "kimi") {
 		return 131072
 	} else if strings.Contains(typ, "glm") {
-		if strings.Contains(typ, "3-turbo") {
-			return 131072
-		} else if strings.Contains(typ, "4V") {
+		if strings.Contains(typ, "glm-5.3") || strings.Contains(typ, "glm-5.2") || strings.Contains(typ, "glm-4-long") {
+			return 1048576
+		} else if strings.Contains(typ, "glm-5") || strings.Contains(typ, "glm-4.7") {
+			return 204800
+		} else if strings.Contains(typ, "glm-4.5v") || strings.Contains(typ, "glm-4.1v") {
+			return 65536
+		} else if strings.Contains(typ, "glm-4v-plus") || strings.Contains(typ, "glm-4-airx") {
 			return 8192
-		} else if strings.Contains(typ, "4") {
-			return 131072
+		} else if strings.Contains(typ, "glm-4v-flash") {
+			return 16384
 		}
+		return 131072
 	}
 	return 4096
 }
