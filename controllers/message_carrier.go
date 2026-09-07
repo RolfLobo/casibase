@@ -112,7 +112,9 @@ func isReasonModel(typ string) bool {
 		return true
 	} else if strings.Contains(typ, "reasoner") {
 		return true
-	} else if strings.Contains(typ, "kimi-for-coding") {
+	} else if strings.Contains(typ, "kimi-for-coding") || typ == "k3" || typ == "k3-256k" {
+		return true
+	} else if strings.Contains(typ, "kimi-k3") || strings.Contains(typ, "kimi-k2.7") || strings.Contains(typ, "kimi-k2.6") {
 		return true
 	} else if strings.Contains(typ, "deepseek-v4-pro") {
 		return true

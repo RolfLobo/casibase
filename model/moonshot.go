@@ -31,6 +31,24 @@ const (
 	kimiCodingUserAgent = "KimiCLI/1.44.0"
 )
 
+// kimiCodingSubTypes are the model IDs served by the Kimi Coding Plan endpoint
+// (https://api.kimi.com/coding/v1) instead of the Kimi open platform endpoint.
+var kimiCodingSubTypes = []string{
+	"k3",
+	"k3-256k",
+	"kimi-for-coding",
+	"kimi-for-coding-highspeed",
+}
+
+func isKimiCodingSubType(subType string) bool {
+	for _, codingSubType := range kimiCodingSubTypes {
+		if subType == codingSubType {
+			return true
+		}
+	}
+	return false
+}
+
 // sseFixReadCloser fixes the SSE format from kimi-for-coding API which sends
 // "data:{...}" (no space after colon) instead of standard "data: {...}".
 // go-openai's stream reader strictly expects "data: " prefix.
@@ -125,60 +143,47 @@ func getKimiCodingClientFromToken(authToken string) *openai.Client {
 
 func (p *MoonshotModelProvider) GetPricing() string {
 	return `URL:
-https://platform.moonshot.cn/docs/pricing/chat
+https://platform.kimi.com/docs/pricing/chat
 
 Model
 
-| Model                  | Unit Of Charge | Input Price | Output Price |
-|------------------------|----------------|-------------|--------------|
-| moonshot-v1-8k         | 1M tokens      | 2 yuan      | 10 yuan      |
-| moonshot-v1-32k        | 1M tokens      | 5 yuan      | 20 yuan      |
-| moonshot-v1-128k       | 1M tokens      | 10 yuan     | 30 yuan      |
-| kimi-k2-0905-preview   | 1M tokens      | 4 yuan      | 16 yuan      |
-| kimi-k2-0711-preview   | 1M tokens      | 4 yuan      | 16 yuan      |
-| kimi-k2-turbo-preview  | 1M tokens      | 8 yuan      | 58 yuan      |
-| kimi-k2-thinking       | 1M tokens      | 4 yuan      | 16 yuan      |
-| kimi-k2-thinking-turbo | 1M tokens      | 8 yuan      | 58 yuan      |
-| kimi-latest            | 1M tokens      | Auto (Tier) | Auto (Tier)  |
-| kimi-for-coding        | 1M tokens      | Auto (Tier) | Auto (Tier)  |
+| Model                    | Context Length | Unit Of Charge | Input Price (Cache Miss) | Output Price |
+|--------------------------|----------------|----------------|--------------------------|--------------|
+| kimi-k3                  | 1M             | 1M tokens      | 20 yuan                  | 100 yuan     |
+| kimi-k2.7-code           | 256K           | 1M tokens      | 6.5 yuan                 | 27 yuan      |
+| kimi-k2.7-code-highspeed | 256K           | 1M tokens      | 13 yuan                  | 54 yuan      |
+| kimi-k2.6                | 256K           | 1M tokens      | 6.5 yuan                 | 27 yuan      |
+
+Kimi Coding Plan models (https://api.kimi.com/coding/v1) are covered by the subscription
+instead of being billed per token:
+
+| Model                     | Context Length | Unit Of Charge | Input Price  | Output Price |
+|---------------------------|----------------|----------------|--------------|--------------|
+| k3                        | 1M             | 1M tokens      | Subscription | Subscription |
+| k3-256k                   | 256K           | 1M tokens      | Subscription | Subscription |
+| kimi-for-coding           | 256K           | 1M tokens      | Subscription | Subscription |
+| kimi-for-coding-highspeed | 256K           | 1M tokens      | Subscription | Subscription |
 `
 }
 
 func (p *MoonshotModelProvider) calculatePrice(modelResult *ModelResult, lang string) error {
-	price := 0.0
+	// The prices are per 1,000 tokens, converted from the per-1M-token prices at
+	// https://platform.kimi.com/docs/pricing/chat, using the cache-miss input price.
 	priceTable := map[string][2]float64{
-		"moonshot-v1-8k":   {0.002, 0.010},
-		"moonshot-v1-32k":  {0.005, 0.020},
-		"moonshot-v1-128k": {0.010, 0.030},
-
-		"kimi-k2-0905-preview": {0.004, 0.016},
-		"kimi-k2-0711-preview": {0.004, 0.016},
-		"kimi-k2-thinking":     {0.004, 0.016},
-
-		"kimi-k2-turbo-preview":  {0.008, 0.058},
-		"kimi-k2-thinking-turbo": {0.008, 0.058},
+		"kimi-k3":                  {0.020, 0.100},
+		"kimi-k2.7-code":           {0.0065, 0.027},
+		"kimi-k2.7-code-highspeed": {0.013, 0.054},
+		"kimi-k2.6":                {0.0065, 0.027},
 	}
 
-	var priceItem [2]float64
-	var ok bool
-
-	if p.subType == "kimi-latest" || p.subType == "kimi-for-coding" {
-		if modelResult.TotalTokenCount <= 8192 {
-			priceItem = [2]float64{0.002, 0.010}
-		} else if modelResult.TotalTokenCount <= 32768 {
-			priceItem = [2]float64{0.005, 0.020}
-		} else {
-			priceItem = [2]float64{0.010, 0.030}
-		}
-		ok = true
-	} else {
-		priceItem, ok = priceTable[p.subType]
-	}
-
-	if ok {
+	price := 0.0
+	if isKimiCodingSubType(p.subType) {
+		// The Kimi Coding Plan is a flat subscription, its calls are not billed per token
+		price = 0.0
+	} else if priceItem, ok := priceTable[p.subType]; ok {
 		inputPrice := getPrice(modelResult.PromptTokenCount, priceItem[0])
 		outputPrice := getPrice(modelResult.ResponseTokenCount, priceItem[1])
-		price = inputPrice + outputPrice
+		price = AddPrices(inputPrice, outputPrice)
 	} else {
 		return fmt.Errorf(i18n.Translate(lang, "embedding:calculatePrice() error: unknown model type: %s"), p.subType)
 	}
@@ -192,7 +197,7 @@ func (p *MoonshotModelProvider) QueryText(question string, writer io.Writer, his
 	var localProvider *LocalModelProvider
 	var err error
 
-	if p.subType == "kimi-for-coding" {
+	if isKimiCodingSubType(p.subType) {
 		localProvider, err = NewLocalModelProvider("Custom-think", "custom-model", p.secretKey, p.temperature, p.topP, 0, 0, kimiCodingBaseURL, p.subType, 0, 0, "CNY")
 		if err != nil {
 			return nil, err

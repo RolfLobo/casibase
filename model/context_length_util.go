@@ -18,7 +18,7 @@ import "strings"
 
 // deepseek https://api-docs.deepseek.com/zh-cn/quick_start/pricing
 // qwen     https://help.aliyun.com/zh/model-studio/models
-// moonshot https://platform.moonshot.cn/docs/pricing/chat#%E7%94%9F%E6%88%90%E6%A8%A1%E5%9E%8B-moonshot-v1
+// kimi     https://platform.kimi.com/docs/models
 // ernie    https://ai.baidu.com/ai-doc/WENXINWORKSHOP/Wm9cvy6rl
 // cohere   https://docs.cohere.com/v2/docs/models#Command
 // doubao   https://www.volcengine.com/docs/82379/1330310
@@ -212,17 +212,6 @@ func getContextLength(typ string) int {
 		}
 	} else if strings.Contains(typ, "dummy") {
 		return 4096
-	} else if strings.Contains(typ, "Moonshot") {
-		if strings.Contains(typ, "v1") {
-			if strings.Contains(typ, "8k") {
-				return 8192
-			} else if strings.Contains(typ, "32k") {
-				return 32768
-			} else if strings.Contains(typ, "128k") {
-				return 131072
-			}
-		}
-		return 4096
 	} else if strings.Contains(typ, "llama") {
 		if strings.Contains(typ, "2") {
 			return 4096
@@ -263,8 +252,12 @@ func getContextLength(typ string) int {
 		}
 	} else if strings.Contains(typ, "yi") {
 		return 16384
-	} else if strings.Contains(typ, "kimi") {
-		return 131072
+	} else if strings.Contains(typ, "kimi") || typ == "k3" || typ == "k3-256k" {
+		// "k3" is the Kimi Coding Plan ID of "kimi-k3", "k3-256k" is its 256K variant
+		if strings.Contains(typ, "kimi-k3") || typ == "k3" {
+			return 1048576
+		}
+		return 262144
 	} else if strings.Contains(typ, "glm") {
 		if strings.Contains(typ, "glm-5.3") || strings.Contains(typ, "glm-5.2") || strings.Contains(typ, "glm-4-long") {
 			return 1048576

@@ -1013,16 +1013,16 @@ export function getModelSubTypeOptions(type) {
     ];
   } else if (type === "Moonshot") {
     return [
-      {id: "kimi-k2-0905-preview", name: "kimi-k2-0905-preview"},
-      {id: "kimi-k2-0711-preview", name: "kimi-k2-0711-preview"},
-      {id: "kimi-k2-turbo-preview", name: "kimi-k2-turbo-preview"},
-      {id: "kimi-k2-thinking", name: "kimi-k2-thinking"},
-      {id: "kimi-k2-thinking-turbo", name: "kimi-k2-thinking-turbo"},
-      {id: "kimi-latest", name: "kimi-latest (Auto Tier)"},
+      // Kimi open platform
+      {id: "kimi-k3", name: "kimi-k3"},
+      {id: "kimi-k2.7-code", name: "kimi-k2.7-code"},
+      {id: "kimi-k2.7-code-highspeed", name: "kimi-k2.7-code-highspeed"},
+      {id: "kimi-k2.6", name: "kimi-k2.6"},
+      // Kimi Coding Plan
+      {id: "k3", name: "k3 (Kimi Coding Plan)"},
+      {id: "k3-256k", name: "k3-256k (Kimi Coding Plan)"},
       {id: "kimi-for-coding", name: "kimi-for-coding (Kimi Coding Plan)"},
-      {id: "moonshot-v1-128k", name: "moonshot-v1-128k"},
-      {id: "moonshot-v1-32k", name: "moonshot-v1-32k"},
-      {id: "moonshot-v1-8k", name: "moonshot-v1-8k"},
+      {id: "kimi-for-coding-highspeed", name: "kimi-for-coding-highspeed (Kimi Coding Plan)"},
     ];
   } else if (type === "Amazon Bedrock") {
     return [
@@ -1403,7 +1403,7 @@ export function getModelProviderMetadata(type) {
     "Azure": {desc: "Azure-hosted GPT models", needsApiKey: true, needsUrl: true, needsClientId: false, needsRegion: false, defaultSubType: "gpt-5.5", urlPlaceholder: "https://your-resource.openai.azure.com"},
     "OpenAI Compatible": {desc: "Any compatible API", needsApiKey: true, needsUrl: true, needsClientId: false, needsRegion: false, defaultSubType: "", urlPlaceholder: "https://api.example.com/v1"},
     "Alibaba Cloud": {desc: "Qwen3, Qwen-Max...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "qwen3-235b-a22b"},
-    "Moonshot": {desc: "Kimi K2, long-context models", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "kimi-k2-0905-preview"},
+    "Moonshot": {desc: "Kimi K3, Kimi K2.7 Code...", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "kimi-k3"},
     "Silicon Flow": {desc: "DeepSeek, Qwen, and more", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "deepseek-ai/DeepSeek-V3.2"},
     "Volcano Engine": {desc: "ByteDance AI platform", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "doubao-seed-2-0-pro-260215"},
     "Baidu Cloud": {desc: "ERNIE Bot models", needsApiKey: true, needsUrl: false, needsClientId: false, needsRegion: false, defaultSubType: "ernie-5.0"},
