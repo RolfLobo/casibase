@@ -138,10 +138,10 @@ func IsVisionModel(subType string) bool {
 		// Specialized
 		"computer-use-preview",
 		// OpenAI-compatible Qwen vision models
-		"qwen3.6-plus", "qwen3.6-flash",
+		"qwen3.8-max", "qwen3.8-flash", "qwen3.8-27b",
+		"qwen3.7-plus", "qwen3.7-flash",
+		"qwen3.6-plus", "qwen3.6-flash", "qwen3.6-27b", "qwen3.6-35b-a3b",
 		"qwen3-vl-plus", "qwen3-vl-flash",
-		"qwen-vl-max", "qwen-vl-plus",
-		"qvq-max", "qvq-plus",
 	}
 
 	for _, visionModel := range visionModels {

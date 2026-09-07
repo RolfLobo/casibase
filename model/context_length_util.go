@@ -67,14 +67,21 @@ func getContextLength(typ string) int {
 			return 1000000
 		}
 	} else if strings.Contains(typ, "qwen") {
-		if strings.Contains(typ, "long") || strings.Contains(typ, "turbo") {
+		if strings.Contains(typ, "qwen-long") {
+			return 10000000
+		} else if strings.Contains(typ, "qwen3.8") || strings.Contains(typ, "qwen3.7") {
 			return 1000000
-		} else if strings.Contains(typ, "plus") {
-			return 131072
-		} else if strings.Contains(typ, "max") {
-			if strings.Contains(typ, "last") {
-				return 131072
+		} else if strings.Contains(typ, "qwen3.6") || strings.Contains(typ, "qwen3.5") {
+			// The commercial models of these series take 1M tokens, the open-source ones take 256K
+			if strings.Contains(typ, "plus") || strings.Contains(typ, "flash") {
+				return 1000000
 			}
+			return 262144
+		} else if strings.Contains(typ, "qwen3-vl") {
+			return 262144
+		} else if strings.Contains(typ, "plus") || strings.Contains(typ, "flash") {
+			return 1000000
+		} else if strings.Contains(typ, "max") {
 			return 32768
 		} else if strings.Contains(typ, "qwen2.5") {
 			if strings.Contains(typ, "instruct") {
